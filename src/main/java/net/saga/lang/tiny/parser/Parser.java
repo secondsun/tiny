@@ -4,10 +4,12 @@ import java.util.Iterator;
 import java.util.List;
 import net.saga.lang.tiny.scanner.Token;
 import net.saga.lang.tiny.scanner.TokenType;
+import static net.saga.lang.tiny.scanner.TokenType.ADDITION;
 import static net.saga.lang.tiny.scanner.TokenType.END_PAREN;
 import static net.saga.lang.tiny.scanner.TokenType.MULTIPLICATION;
 import static net.saga.lang.tiny.scanner.TokenType.NUMBER;
 import static net.saga.lang.tiny.scanner.TokenType.START_PAREN;
+import static net.saga.lang.tiny.scanner.TokenType.SUBTRACTION;
 
 public class Parser {
     
@@ -39,7 +41,7 @@ public class Parser {
      * @return 
      */
     public Node parse() {
-        return term();
+        return expression();
     }
 
     public void match(TokenType expectedType) {
@@ -55,7 +57,7 @@ public class Parser {
         switch(token.getType()) {
             case START_PAREN:
                 match(START_PAREN);
-                factorNode = factor();
+                factorNode = expression();
                 match(END_PAREN);
                 break;
             case NUMBER:
@@ -68,8 +70,31 @@ public class Parser {
         return factorNode;
     }
 
-    private Node exp() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private Node expression() {
+        Node firstTerm = term();
+        if (token == null) {
+            return firstTerm;
+        }
+        switch(token.getType()) {
+            case ADDITION:{
+                Token addToken = token;
+                    match(ADDITION);
+                    Node parentNode = new Node(ExpressionKind.OperatorExpression, addToken);
+                    parentNode.setChild(0, firstTerm);
+                    parentNode.setChild(1, term());
+                    return parentNode;
+            }
+            case SUBTRACTION: {
+                    Token subToken = token;
+                    match(SUBTRACTION);
+                    Node parentNode = new Node(ExpressionKind.OperatorExpression, subToken);
+                    parentNode.setChild(0, firstTerm);
+                    parentNode.setChild(1, term());
+                    return parentNode;
+            }
+            default:
+                return firstTerm;
+        }
     }
 
     private Node term() {
@@ -83,10 +108,10 @@ public class Parser {
                     match(MULTIPLICATION);
                     Node parentNode = new Node(ExpressionKind.OperatorExpression, multToken);
                     parentNode.setChild(0, firstFactor);
-                    parentNode.setChild(1, term());
+                    parentNode.setChild(1, factor());
                     return parentNode;
                 default:
-                throw new IllegalStateException("Not a factor" + token);
+                    return firstFactor;
             }
         }
     }

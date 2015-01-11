@@ -5,9 +5,7 @@ import static java.nio.CharBuffer.wrap;
 import java.util.List;
 import net.saga.lang.tiny.parser.ExpressionKind;
 import net.saga.lang.tiny.parser.Node;
-import net.saga.lang.tiny.parser.NodeKind;
 import static net.saga.lang.tiny.parser.NodeKind.ExpressionNode;
-import static net.saga.lang.tiny.parser.NodeKind.StatementNode;
 import net.saga.lang.tiny.parser.Parser;
 import net.saga.lang.tiny.scanner.Scanner;
 import net.saga.lang.tiny.scanner.Token;
@@ -84,6 +82,39 @@ public class Test_02_Parser {
         assertEquals(ExpressionKind.OperatorExpression, root.getExpressionKind());
         assertEquals(TokenType.MULTIPLICATION, root.getOperationAttribute());
         
+        Node multiplicand = root.getChild(0);
+        Node multiplier = root.getChild(1);
+        
+        assertEquals(ExpressionNode, multiplicand.getNodeKind());
+        assertEquals(ExpressionKind.ConstantExpression, multiplicand.getExpressionKind());
+        assertEquals(TokenType.NUMBER, multiplicand.getOperationAttribute());
+        assertEquals(3, multiplicand.getValue());
+        
+        assertEquals(ExpressionNode, multiplier.getNodeKind());
+        assertEquals(ExpressionKind.ConstantExpression, multiplier.getExpressionKind());
+        assertEquals(TokenType.NUMBER, multiplier.getOperationAttribute());
+        assertEquals(4, multiplier.getValue());
+        
+    }
+    
+    /**
+     * This test checks that our parser supports the grammar.
+     * 
+     * This is also the first time we are assembling a tree.
+     * 
+     * exp -> exp addop term | term
+     * addop -> + | -
+     * term -> term mulop factor | factor
+     * mulop -> *
+     * factor -> ( factor ) | number
+     */
+    @Test
+    public void testParseAdditionExpression() {
+        Node root = new Parser().parse(new Scanner().scan(wrap("3 + 4")));
+        assertEquals(ExpressionNode, root.getNodeKind());
+        assertEquals(ExpressionKind.OperatorExpression, root.getExpressionKind());
+        assertEquals(TokenType.ADDITION, root.getOperationAttribute());
+        
         Node augend = root.getChild(0);
         Node addend = root.getChild(1);
         
@@ -97,7 +128,44 @@ public class Test_02_Parser {
         assertEquals(TokenType.NUMBER, addend.getOperationAttribute());
         assertEquals(4, addend.getValue());
         
+    }
+    
+    /**
+     * If the previous test was implemented correctly, this should be implemented
+     * as well.
+     */
+    @Test
+    public void testParseComplexExpression() {
+        Node root = new Parser().parse(new Scanner().scan(wrap("3 + 2 * 2")));
+        assertEquals(ExpressionNode, root.getNodeKind());
+        assertEquals(ExpressionKind.OperatorExpression, root.getExpressionKind());
+        assertEquals(TokenType.ADDITION, root.getOperationAttribute());
+        
+        Node augend = root.getChild(0);
+        Node addend = root.getChild(1);
+        
+        assertEquals(ExpressionNode, augend.getNodeKind());
+        assertEquals(ExpressionKind.ConstantExpression, augend.getExpressionKind());
+        assertEquals(TokenType.NUMBER, augend.getOperationAttribute());
+        assertEquals(3, augend.getValue());
+        
+        assertEquals(ExpressionNode, addend.getNodeKind());
+        assertEquals(ExpressionKind.OperatorExpression, addend.getExpressionKind());
+        
+        Node multiplicand = addend.getChild(0);
+        Node multiplier = addend.getChild(1);
+        
+        assertEquals(ExpressionNode, multiplicand.getNodeKind());
+        assertEquals(ExpressionKind.ConstantExpression, multiplicand.getExpressionKind());
+        assertEquals(TokenType.NUMBER, multiplicand.getOperationAttribute());
+        assertEquals(2, multiplicand.getValue());
+        
+        assertEquals(ExpressionNode, multiplier.getNodeKind());
+        assertEquals(ExpressionKind.ConstantExpression, multiplier.getExpressionKind());
+        assertEquals(TokenType.NUMBER, multiplier.getOperationAttribute());
+        assertEquals(2, multiplier.getValue());
         
     }
+    
     
 }
