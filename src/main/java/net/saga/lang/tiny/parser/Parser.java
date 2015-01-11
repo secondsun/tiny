@@ -79,8 +79,9 @@ public class Parser {
         } else {
             switch(token.getType()) {
                 case MULTIPLICATION:
+                    Token multToken = token;
                     match(MULTIPLICATION);
-                    Node parentNode = new Node(ExpressionKind.OperatorExpression, token);
+                    Node parentNode = new Node(ExpressionKind.OperatorExpression, multToken);
                     parentNode.setChild(0, firstFactor);
                     parentNode.setChild(1, term());
                     return parentNode;
