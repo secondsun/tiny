@@ -175,7 +175,7 @@ public class Test_01_Scanner {
     public void testNewline() {
         Token token = new Scanner().nextToken(wrap("{this is a comment}\n end"));
         assertEquals(TokenType.END, token.getType());
-        assertEquals(2, token.getLine());
+        assertEquals(2, token.getLineNumber());
     }
 
     

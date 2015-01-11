@@ -39,7 +39,7 @@ public class Token {
         mLineNumber = lineNumber;
     }
 
-    public Object getType() {
+    public TokenType getType() {
         return mType;
     }
 
@@ -109,7 +109,7 @@ public class Token {
         return mLineNumber + ":{" + "mType=" + mType + ", mValue=" + mValue + ", mName=" + mName + '}';
     }
 
-    public Object getLine() {
+    public int getLineNumber() {
         return mLineNumber;
     }
 
