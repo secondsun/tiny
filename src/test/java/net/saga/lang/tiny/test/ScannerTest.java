@@ -153,15 +153,12 @@ public class ScannerTest {
     /**
      * Now all tokens should be able to be scanned out.
      * 
-     * We are going to move on to a `parse` method which will return a 
-     * List of tokens.
-     * 
-     * 
+     * First lets make sure next token ignores comments and white space
      */
     @Test
     public void ignoreComments() {
-        List<Token> tokens = Scanner.parse(wrap("{this is a comment} end"));
-        assertEquals(TokenType.END, tokens.get(0).getType());
+        Token token = Scanner.nextToken(wrap("{this is a comment} end"));
+        assertEquals(TokenType.END, token.getType());
     }
 //    
 //    @Test

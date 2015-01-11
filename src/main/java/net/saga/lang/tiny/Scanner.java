@@ -40,6 +40,7 @@ public class Scanner {
                         throw new IllegalStateException("Nest comments");
                     }
                 }
+            } else if (character == ' ') {
             } else {
                 tokenBuilder.append(character);
             }
