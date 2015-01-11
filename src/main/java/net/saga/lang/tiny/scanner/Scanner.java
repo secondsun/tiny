@@ -71,7 +71,7 @@ public class Scanner {
 
     }
 
-    public static List<Token> parse(CharBuffer buffer) {
+    public static List<Token> scan(CharBuffer buffer) {
         ArrayList<Token> tokens = new ArrayList<>(100);
         Token token = nextToken(buffer);
         while (token != null) {

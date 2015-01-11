@@ -47,9 +47,9 @@ import static org.junit.Assert.*;
  * in Tiny are surrounded by { } ex. {This is a comment.} ex. { This is also a
  * comment. }
  */
-public class ScannerTest {
+public class Test_01_Scanner {
 
-    public ScannerTest() {
+    public Test_01_Scanner() {
     }
 
     @Test
@@ -191,7 +191,7 @@ public class ScannerTest {
 
     @Test
     public void extractIfThenElseTokens() {
-        List<Token> token = Scanner.parse(wrap("if then else"));
+        List<Token> token = Scanner.scan(wrap("if then else"));
         assertEquals(TokenType.IF, token.get(0).getType());
         assertEquals(TokenType.THEN, token.get(1).getType());
         assertEquals(TokenType.ELSE, token.get(2).getType());
@@ -205,8 +205,8 @@ public class ScannerTest {
      */
     @Test
     public void parseSampleDotTny() throws IOException {
-        String program = IOUtils.toString(ScannerTest.class.getClassLoader().getResourceAsStream("sample.tny"));
-        List<Token> tokens = Scanner.parse(wrap(program));
+        String program = IOUtils.toString(Test_01_Scanner.class.getClassLoader().getResourceAsStream("sample.tny"));
+        List<Token> tokens = Scanner.scan(wrap(program));
         int index = 0;
         //line 5
         assertEquals(Token.newInstance(READ), tokens.get(index++));
