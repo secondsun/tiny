@@ -22,6 +22,8 @@ import net.saga.lang.tiny.scanner.TokenType;
 
 public class Scanner {
 
+    private int lineNumber = 1;
+    
     /**
      * Given the a input buffer, find the next token.
      * 
@@ -30,7 +32,7 @@ public class Scanner {
      * @param buffer a charbuffer
      * @return a token
      */
-    public static Token nextToken(CharBuffer buffer) {
+    public Token nextToken(CharBuffer buffer) {
         
         String token = getNextTokenString(buffer);
         
@@ -59,11 +61,11 @@ public class Scanner {
             case END_PAREN:
             case SEMICOLON:
             case ASSIGNMENT:
-                return Token.newInstance(type);
+                return Token.newInstance(type, lineNumber);
             case NUMBER:
-                return Token.newInstance(Integer.parseInt(token));
+                return Token.newInstance(Integer.parseInt(token), lineNumber);
             case IDENTIFIER:
-                return Token.newInstance(token);
+                return Token.newInstance(token, lineNumber);
             default:
                 throw new AssertionError(type.name());
                
@@ -71,7 +73,7 @@ public class Scanner {
 
     }
 
-    public static List<Token> scan(CharBuffer buffer) {
+    public List<Token> scan(CharBuffer buffer) {
         ArrayList<Token> tokens = new ArrayList<>(100);
         Token token = nextToken(buffer);
         while (token != null) {
@@ -81,7 +83,7 @@ public class Scanner {
         return tokens;
     }
 
-    private static String getNextTokenString(CharBuffer buffer) {
+    private String getNextTokenString(CharBuffer buffer) {
         StringBuilder tokenBuilder = new StringBuilder(40);
         if (!buffer.hasRemaining()) {
             return "";
@@ -92,6 +94,9 @@ public class Scanner {
         if (character == '{') {
             handleComment(buffer);
         } else if (Character.isWhitespace(character)) {
+            if (character == '\n') {
+                lineNumber++;
+            }
             handleWhiteSpace(buffer);
         } else if (Character.isDigit(character)){
             tokenBuilder.append(character);
@@ -117,7 +122,7 @@ public class Scanner {
         
     }
 
-    private static void handleComment(CharBuffer buffer) {
+    private void handleComment(CharBuffer buffer) {
         if (!buffer.hasRemaining()) {
             throw new IllegalStateException("Unexpected end of file");
         }
@@ -126,25 +131,31 @@ public class Scanner {
         if (character == '{') {
             throw new IllegalStateException("Nested comments");
         } else if (character != '}') {
+            if (character == '\n') {
+                lineNumber++;
+            }
             handleComment(buffer);
         }
         
     }
 
-    private static void handleWhiteSpace(CharBuffer buffer) {
+    private void handleWhiteSpace(CharBuffer buffer) {
         if (!buffer.hasRemaining()) {
             return;
         }
         buffer.mark();
         char character = buffer.get();
         if (Character.isWhitespace(character)) {
+            if (character == '\n') {
+                lineNumber++;
+            }
             handleWhiteSpace(buffer);
         } else {
             buffer.reset();
         }
     }
 
-    private static void handleDigit(StringBuilder builder, CharBuffer buffer) {
+    private void handleDigit(StringBuilder builder, CharBuffer buffer) {
         if (!buffer.hasRemaining()) {
             return;
         }
@@ -158,7 +169,7 @@ public class Scanner {
         }
     }
 
-    private static void handleIdentifier(StringBuilder builder, CharBuffer buffer) {
+    private void handleIdentifier(StringBuilder builder, CharBuffer buffer) {
         if (!buffer.hasRemaining()) {
             return;
         }

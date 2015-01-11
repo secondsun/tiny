@@ -54,49 +54,49 @@ public class Test_01_Scanner {
 
     @Test
     public void extractIfToken() {
-        Token token = Scanner.nextToken(wrap("if"));
+        Token token = new Scanner().nextToken(wrap("if"));
         assertEquals(TokenType.IF, token.getType());
     }
 
     @Test
     public void extractThenToken() {
-        Token token = Scanner.nextToken(wrap("then"));
+        Token token = new Scanner().nextToken(wrap("then"));
         assertEquals(TokenType.THEN, token.getType());
     }
 
     @Test
     public void extractElseToken() {
-        Token token = Scanner.nextToken(wrap("else"));
+        Token token = new Scanner().nextToken(wrap("else"));
         assertEquals(TokenType.ELSE, token.getType());
     }
 
     @Test
     public void extractEndToken() {
-        Token token = Scanner.nextToken(wrap("end"));
+        Token token = new Scanner().nextToken(wrap("end"));
         assertEquals(TokenType.END, token.getType());
     }
 
     @Test
     public void extractRepeatToken() {
-        Token token = Scanner.nextToken(wrap("repeat"));
+        Token token = new Scanner().nextToken(wrap("repeat"));
         assertEquals(TokenType.REPEAT, token.getType());
     }
 
     @Test
     public void extractUntilToken() {
-        Token token = Scanner.nextToken(wrap("until"));
+        Token token = new Scanner().nextToken(wrap("until"));
         assertEquals(TokenType.UNTIL, token.getType());
     }
 
     @Test
     public void extractReadToken() {
-        Token token = Scanner.nextToken(wrap("read"));
+        Token token = new Scanner().nextToken(wrap("read"));
         assertEquals(TokenType.READ, token.getType());
     }
 
     @Test
     public void extractWriteToken() {
-        Token token = Scanner.nextToken(wrap("write"));
+        Token token = new Scanner().nextToken(wrap("write"));
         assertEquals(TokenType.WRITE, token.getType());
     }
 
@@ -106,25 +106,25 @@ public class Test_01_Scanner {
     @Test
     public void extractSymbols() {
         Token token;
-        token = Scanner.nextToken(wrap("+"));
+        token = new Scanner().nextToken(wrap("+"));
         assertEquals(TokenType.ADDITION, token.getType());
-        token = Scanner.nextToken(wrap("-"));
+        token = new Scanner().nextToken(wrap("-"));
         assertEquals(TokenType.SUBTRACTION, token.getType());
-        token = Scanner.nextToken(wrap("*"));
+        token = new Scanner().nextToken(wrap("*"));
         assertEquals(TokenType.MULTIPLICATION, token.getType());
-        token = Scanner.nextToken(wrap("/"));
+        token = new Scanner().nextToken(wrap("/"));
         assertEquals(TokenType.INT_DIVISION, token.getType());
-        token = Scanner.nextToken(wrap("="));
+        token = new Scanner().nextToken(wrap("="));
         assertEquals(TokenType.EQ, token.getType());
-        token = Scanner.nextToken(wrap("<"));
+        token = new Scanner().nextToken(wrap("<"));
         assertEquals(TokenType.LT, token.getType());
-        token = Scanner.nextToken(wrap("("));
+        token = new Scanner().nextToken(wrap("("));
         assertEquals(TokenType.START_PAREN, token.getType());
-        token = Scanner.nextToken(wrap(")"));
+        token = new Scanner().nextToken(wrap(")"));
         assertEquals(TokenType.END_PAREN, token.getType());
-        token = Scanner.nextToken(wrap(";"));
+        token = new Scanner().nextToken(wrap(";"));
         assertEquals(TokenType.SEMICOLON, token.getType());
-        token = Scanner.nextToken(wrap(":="));
+        token = new Scanner().nextToken(wrap(":="));
         assertEquals(TokenType.ASSIGNMENT, token.getType());
     }
 
@@ -137,7 +137,7 @@ public class Test_01_Scanner {
     @Test
     public void extractNumbers() {
         Token token;
-        token = Scanner.nextToken(wrap("42"));
+        token = new Scanner().nextToken(wrap("42"));
         assertEquals(TokenType.NUMBER, token.getType());
         assertEquals(42, token.getValue());
     }
@@ -145,7 +145,7 @@ public class Test_01_Scanner {
     @Test
     public void extractIdentifier() {
         Token token;
-        token = Scanner.nextToken(wrap("x"));
+        token = new Scanner().nextToken(wrap("x"));
         assertEquals(TokenType.IDENTIFIER, token.getType());
         assertEquals("x", token.getName());
     }
@@ -157,20 +157,25 @@ public class Test_01_Scanner {
      */
     @Test
     public void ignoreComments() {
-        Token token = Scanner.nextToken(wrap("{this is a comment} end"));
+        Token token = new Scanner().nextToken(wrap("{this is a comment} end"));
         assertEquals(TokenType.END, token.getType());
     }
 
     @Test(expected = IllegalStateException.class)
     public void errorOnUnterminatedComment() {
-        Scanner.nextToken(wrap("{this is a comment"));
+        new Scanner().nextToken(wrap("{this is a comment"));
         fail();
     }
 
+    /**
+     * Tokens should include line info because that will be used later on
+     * in compilation.
+     */
     @Test
     public void testNewline() {
-        Token token = Scanner.nextToken(wrap("{this is a comment}\n end"));
+        Token token = new Scanner().nextToken(wrap("{this is a comment}\n end"));
         assertEquals(TokenType.END, token.getType());
+        assertEquals(2, token.getLine());
     }
 
     
@@ -179,19 +184,19 @@ public class Test_01_Scanner {
      */
     @Test
     public void whenMultipleTokensExtractFirst() {
-        Token token = Scanner.nextToken(wrap("if then else"));
+        Token token = new Scanner().nextToken(wrap("if then else"));
         assertEquals(TokenType.IF, token.getType());
     }
 
     @Test
     public void whenMultipleTokensExtractFirstWithoutWhitespace() {
-        Token token = Scanner.nextToken(wrap("if+then+else"));
+        Token token = new Scanner().nextToken(wrap("if+then+else"));
         assertEquals(TokenType.IF, token.getType());
     }
 
     @Test
     public void extractIfThenElseTokens() {
-        List<Token> token = Scanner.scan(wrap("if then else"));
+        List<Token> token = new Scanner().scan(wrap("if then else"));
         assertEquals(TokenType.IF, token.get(0).getType());
         assertEquals(TokenType.THEN, token.get(1).getType());
         assertEquals(TokenType.ELSE, token.get(2).getType());
@@ -206,49 +211,49 @@ public class Test_01_Scanner {
     @Test
     public void parseSampleDotTny() throws IOException {
         String program = IOUtils.toString(Test_01_Scanner.class.getClassLoader().getResourceAsStream("sample.tny"));
-        List<Token> tokens = Scanner.scan(wrap(program));
+        List<Token> tokens = new Scanner().scan(wrap(program));
         int index = 0;
         //line 5
-        assertEquals(Token.newInstance(READ), tokens.get(index++));
-        assertEquals(Token.newInstance("x"), tokens.get(index++));
-        assertEquals(Token.newInstance(SEMICOLON), tokens.get(index++));
+        assertEquals(Token.newInstance(READ, 5), tokens.get(index++));
+        assertEquals(Token.newInstance("x", 5), tokens.get(index++));
+        assertEquals(Token.newInstance(SEMICOLON, 5), tokens.get(index++));
         //line 6
-        assertEquals(Token.newInstance(IF), tokens.get(index++));
-        assertEquals(Token.newInstance(0), tokens.get(index++));
-        assertEquals(Token.newInstance(LT), tokens.get(index++));
-        assertEquals(Token.newInstance("x"), tokens.get(index++));
-        assertEquals(Token.newInstance(THEN), tokens.get(index++));
+        assertEquals(Token.newInstance(IF, 6), tokens.get(index++));
+        assertEquals(Token.newInstance(0, 6), tokens.get(index++));
+        assertEquals(Token.newInstance(LT, 6), tokens.get(index++));
+        assertEquals(Token.newInstance("x", 6), tokens.get(index++));
+        assertEquals(Token.newInstance(THEN, 6), tokens.get(index++));
         //line 7
-        assertEquals(Token.newInstance("fact"), tokens.get(index++));
-        assertEquals(Token.newInstance(ASSIGNMENT), tokens.get(index++));
-        assertEquals(Token.newInstance(1), tokens.get(index++));
-        assertEquals(Token.newInstance(SEMICOLON), tokens.get(index++));
+        assertEquals(Token.newInstance("fact", 7), tokens.get(index++));
+        assertEquals(Token.newInstance(ASSIGNMENT, 7), tokens.get(index++));
+        assertEquals(Token.newInstance(1, 7), tokens.get(index++));
+        assertEquals(Token.newInstance(SEMICOLON, 7), tokens.get(index++));
         //line 8
-        assertEquals(Token.newInstance(REPEAT), tokens.get(index++));
+        assertEquals(Token.newInstance(REPEAT, 8), tokens.get(index++));
         //line 9
-        assertEquals(Token.newInstance("fact"), tokens.get(index++));
-        assertEquals(Token.newInstance(ASSIGNMENT), tokens.get(index++));
-        assertEquals(Token.newInstance("fact"), tokens.get(index++));
-        assertEquals(Token.newInstance(MULTIPLICATION), tokens.get(index++));
-        assertEquals(Token.newInstance("x"), tokens.get(index++));
-        assertEquals(Token.newInstance(SEMICOLON), tokens.get(index++));
+        assertEquals(Token.newInstance("fact", 9), tokens.get(index++));
+        assertEquals(Token.newInstance(ASSIGNMENT, 9), tokens.get(index++));
+        assertEquals(Token.newInstance("fact", 9), tokens.get(index++));
+        assertEquals(Token.newInstance(MULTIPLICATION, 9), tokens.get(index++));
+        assertEquals(Token.newInstance("x", 9), tokens.get(index++));
+        assertEquals(Token.newInstance(SEMICOLON, 9), tokens.get(index++));
         //line 10
-        assertEquals(Token.newInstance("x"), tokens.get(index++));
-        assertEquals(Token.newInstance(ASSIGNMENT), tokens.get(index++));
-        assertEquals(Token.newInstance("x"), tokens.get(index++));
-        assertEquals(Token.newInstance(SUBTRACTION), tokens.get(index++));
-        assertEquals(Token.newInstance(1), tokens.get(index++));
+        assertEquals(Token.newInstance("x", 10), tokens.get(index++));
+        assertEquals(Token.newInstance(ASSIGNMENT, 10), tokens.get(index++));
+        assertEquals(Token.newInstance("x", 10), tokens.get(index++));
+        assertEquals(Token.newInstance(SUBTRACTION, 10), tokens.get(index++));
+        assertEquals(Token.newInstance(1, 10), tokens.get(index++));
         //line 11
-        assertEquals(Token.newInstance(UNTIL), tokens.get(index++));
-        assertEquals(Token.newInstance("x"), tokens.get(index++));
-        assertEquals(Token.newInstance(EQ), tokens.get(index++));
-        assertEquals(Token.newInstance(0), tokens.get(index++));
-        assertEquals(Token.newInstance(SEMICOLON), tokens.get(index++));
+        assertEquals(Token.newInstance(UNTIL, 11), tokens.get(index++));
+        assertEquals(Token.newInstance("x", 11), tokens.get(index++));
+        assertEquals(Token.newInstance(EQ, 11), tokens.get(index++));
+        assertEquals(Token.newInstance(0, 11), tokens.get(index++));
+        assertEquals(Token.newInstance(SEMICOLON, 11), tokens.get(index++));
         //line 12
-        assertEquals(Token.newInstance(WRITE), tokens.get(index++));
-        assertEquals(Token.newInstance("fact"), tokens.get(index++));
+        assertEquals(Token.newInstance(WRITE, 12), tokens.get(index++));
+        assertEquals(Token.newInstance("fact", 12), tokens.get(index++));
         //line 13
-        assertEquals(Token.newInstance(END), tokens.get(index++));
+        assertEquals(Token.newInstance(END, 13), tokens.get(index++));
         
     }
 
