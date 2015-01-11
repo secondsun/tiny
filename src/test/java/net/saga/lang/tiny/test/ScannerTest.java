@@ -16,9 +16,11 @@
 package net.saga.lang.tiny.test;
 
 import static java.nio.CharBuffer.wrap;
+import java.util.List;
 import net.saga.lang.tiny.Scanner;
 import net.saga.lang.tiny.Scanner.Token;
 import net.saga.lang.tiny.Scanner.Token.TokenType;
+import net.saga.lang.tiny.Scanner.UnknownTokenException;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -32,6 +34,11 @@ import static org.junit.Assert.*;
  * Tiny has two other token types
  *  number (1 or more digits)
  *  identifier (1 or more letters)
+ * Comments in Tiny are surrounded by { }
+ *  ex. {This is a comment.}
+ *  ex. {
+ *          This is also a comment.
+ *      }
  */
 public class ScannerTest {
     
@@ -86,5 +93,90 @@ public class ScannerTest {
         Token token = Scanner.nextToken(wrap("write"));
         assertEquals(TokenType.WRITE, token.getType());
     }
+    
+    /**
+     * At this point adding in more tokens should be easy.
+     */
+    @Test
+    public void extractSymbols() {
+        Token token;
+        token = Scanner.nextToken(wrap("+"));
+        assertEquals(TokenType.ADDITION, token.getType());
+        token = Scanner.nextToken(wrap("-"));
+        assertEquals(TokenType.SUBTRACTION, token.getType());
+        token = Scanner.nextToken(wrap("*"));
+        assertEquals(TokenType.MULTIPLICATION, token.getType());
+        token = Scanner.nextToken(wrap("/"));
+        assertEquals(TokenType.INT_DIVISION, token.getType());
+        token = Scanner.nextToken(wrap("="));
+        assertEquals(TokenType.EQ, token.getType());
+        token = Scanner.nextToken(wrap("<"));
+        assertEquals(TokenType.LT, token.getType());
+        token = Scanner.nextToken(wrap("("));
+        assertEquals(TokenType.START_PAREN, token.getType());
+        token = Scanner.nextToken(wrap(")"));
+        assertEquals(TokenType.END_PAREN, token.getType());
+        token = Scanner.nextToken(wrap(";"));
+        assertEquals(TokenType.SEMICOLON, token.getType());
+        token = Scanner.nextToken(wrap(":="));
+        assertEquals(TokenType.ASSIGNMENT, token.getType());
+    }
+
+    /**
+     * Number Tokens can have values.
+     * 
+     * Numbers in TINY are currently only positive.
+     * 
+     */
+    @Test
+    public void extractNumbers() {
+        Token token;
+        token = Scanner.nextToken(wrap("42"));
+        assertEquals(TokenType.NUMBER, token.getType());
+        assertEquals(42, token.getValue());
+    }
+    
+    @Test
+    public void extractIdentifier() {
+        Token token;
+        token = Scanner.nextToken(wrap("x"));
+        assertEquals(TokenType.IDENTIFIER, token.getType());
+        assertEquals("x", token.getName());
+    }
+    
+    @Test(expected = UnknownTokenException.class)
+    public void illegalTokensThrowException() {
+        Scanner.nextToken(wrap("x21"));
+        fail();
+    }
+    
+    /**
+     * Now all tokens should be able to be scanned out.
+     * 
+     * We are going to move on to a `parse` method which will return a 
+     * List of tokens.
+     * 
+     * 
+     */
+    @Test
+    public void ignoreComments() {
+        List<Token> tokens = Scanner.parse(wrap("{this is a comment} end"));
+        assertEquals(TokenType.END, tokens.get(0).getType());
+    }
+//    
+//    @Test
+//    public void extractIfThenElseTokens() {
+//        List<Token> token = Scanner.nextToken(wrap("if then else"));
+//        assertEquals(TokenType.IF, token.get(0).getType());
+//        assertEquals(TokenType.THEN, token.get(1).getType());
+//        assertEquals(TokenType.ELSE, token.get(2).getType());
+//        
+//    }
+//    
+    
+    
+    
+    
+    
     
 }
