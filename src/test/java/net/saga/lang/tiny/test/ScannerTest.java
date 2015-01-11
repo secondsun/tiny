@@ -17,10 +17,9 @@ package net.saga.lang.tiny.test;
 
 import static java.nio.CharBuffer.wrap;
 import java.util.List;
-import net.saga.lang.tiny.Scanner;
-import net.saga.lang.tiny.Scanner.Token;
-import net.saga.lang.tiny.Scanner.Token.TokenType;
-import net.saga.lang.tiny.Scanner.UnknownTokenException;
+import net.saga.lang.tiny.scanner.Scanner;
+import net.saga.lang.tiny.scanner.Token;
+import net.saga.lang.tiny.scanner.TokenType;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -144,32 +143,48 @@ public class ScannerTest {
         assertEquals("x", token.getName());
     }
     
-    @Test(expected = UnknownTokenException.class)
-    public void illegalTokensThrowException() {
-        Scanner.nextToken(wrap("x21"));
-        fail();
-    }
-    
     /**
      * Now all tokens should be able to be scanned out.
      * 
-     * First lets make sure next token ignores comments and white space
+     * First lets make sure next token handles comments and white space
      */
     @Test
     public void ignoreComments() {
         Token token = Scanner.nextToken(wrap("{this is a comment} end"));
         assertEquals(TokenType.END, token.getType());
     }
-//    
-//    @Test
-//    public void extractIfThenElseTokens() {
-//        List<Token> token = Scanner.nextToken(wrap("if then else"));
-//        assertEquals(TokenType.IF, token.get(0).getType());
-//        assertEquals(TokenType.THEN, token.get(1).getType());
-//        assertEquals(TokenType.ELSE, token.get(2).getType());
-//        
-//    }
-//    
+    
+    @Test(expected = IllegalStateException.class)
+    public void errorOnUnterminatedComment() {
+        Scanner.nextToken(wrap("{this is a comment"));
+        fail();
+    }
+    
+    /**
+     * Now we will test that we can extract multiple tokens in an input.
+     */
+    
+    @Test
+    public void whenMultipleTokensExtractFirst() {
+        Token token = Scanner.nextToken(wrap("if then else"));
+        assertEquals(TokenType.IF, token.getType());
+    }
+    
+    @Test
+    public void whenMultipleTokensExtractFirstWithoutWhitespace() {
+        Token token = Scanner.nextToken(wrap("if+then+else"));
+        assertEquals(TokenType.IF, token.getType());
+    }
+    
+    @Test
+    public void extractIfThenElseTokens() {
+        List<Token> token = Scanner.parse(wrap("if then else"));
+        assertEquals(TokenType.IF, token.get(0).getType());
+        assertEquals(TokenType.THEN, token.get(1).getType());
+        assertEquals(TokenType.ELSE, token.get(2).getType());
+        
+    }
+    
     
     
     
