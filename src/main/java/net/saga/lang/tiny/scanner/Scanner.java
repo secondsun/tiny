@@ -91,7 +91,7 @@ public class Scanner {
         
         if (character == '{') {
             handleComment(buffer);
-        } else if (character == ' ') {
+        } else if (Character.isWhitespace(character)) {
             handleWhiteSpace(buffer);
         } else if (Character.isDigit(character)){
             tokenBuilder.append(character);
@@ -137,7 +137,7 @@ public class Scanner {
         }
         buffer.mark();
         char character = buffer.get();
-        if (character == ' ') {
+        if (Character.isWhitespace(character)) {
             handleWhiteSpace(buffer);
         } else {
             buffer.reset();
