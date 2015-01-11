@@ -1,5 +1,7 @@
 package net.saga.lang.tiny.parser;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.saga.lang.tiny.scanner.Token;
 import net.saga.lang.tiny.scanner.TokenType;
 
@@ -10,6 +12,7 @@ public class Node {
     private final TokenType operationAttribute;
     private final int lineNumber;
     private final int value;
+    private final List<Node> children = new ArrayList<>(3);
     
     public Node(ExpressionKind expressionKind, Token token) {
         this.expressionKind = expressionKind;
@@ -32,7 +35,7 @@ public class Node {
     }
 
     public Node getChild(int i) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return children.get(i);
     }
 
     public int getLineNumber() {
@@ -41,6 +44,10 @@ public class Node {
 
     public int getValue() {
         return value;
+    }
+
+    public void setChild(int index, Node childNode) {
+        children.add(index, childNode);
     }
 
 }
