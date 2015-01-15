@@ -69,13 +69,15 @@ public class Parser {
 
     private Node statementSequence() {
         Node firstNode = statement();
-        if (token == null || token.getType() != SEMICOLON) {
+        if (token == null) {
             return firstNode;
         }
         
-        match(SEMICOLON);
-        if (token != null)
+        while (token != null && (token.getType() != TokenType.ELSE) && token.getType() != TokenType.UNTIL&& token.getType() != TokenType.END){
+            match(SEMICOLON);
             firstNode.setNext(statement());
+        } 
+        
         return firstNode;
         
     }
@@ -83,14 +85,14 @@ public class Parser {
     private Node factor() {
         Node factorNode;
         switch(token.getType()) {
-            case START_PAREN:
-                match(START_PAREN);
-                factorNode = simpleExpression();
-                match(END_PAREN);
-                break;
             case NUMBER:
                 factorNode = new Node(ExpressionKind.ConstantExpression, token);
                 nextToken();
+                break;
+            case START_PAREN:
+                match(START_PAREN);
+                factorNode = expression();
+                match(END_PAREN);
                 break;
             case IDENTIFIER:
                 factorNode = new Node(ExpressionKind.IdentifierExpression, token);
@@ -104,26 +106,22 @@ public class Parser {
 
     private Node expression() {
         Node firstExpression = simpleExpression();
+        
         if (token == null) {
             return firstExpression;
         }
-        Node parentNode;
-        Token lhsToken = token;
-        switch(token.getType()) {
-            case LT: 
-                match(LT);
-                break;
-            case EQ: 
-                match(EQ);
-                break;
-            default:
-                return firstExpression;    
-                        
+        Node parentNode = firstExpression;
+        if (token.getType() == LT || token.getType() == EQ) {
+            parentNode = new Node(ExpressionKind.OperatorExpression, token);
+            parentNode.setChild(0, firstExpression);
+            firstExpression = parentNode;
+            match(token.getType());
+            firstExpression.setChild(1, simpleExpression());
         }
-        parentNode = new Node(ExpressionKind.OperatorExpression, lhsToken);
-        parentNode.setChild(0, firstExpression);
-        parentNode.setChild(1, simpleExpression());
-        return parentNode;
+        
+        
+        
+        return firstExpression;
         
     }
     
@@ -132,26 +130,18 @@ public class Parser {
         if (token == null) {
             return firstTerm;
         }
-        switch(token.getType()) {
-            case ADDITION:{
-                Token addToken = token;
-                    match(ADDITION);
-                    Node parentNode = new Node(ExpressionKind.OperatorExpression, addToken);
+        Node parentNode = firstTerm;
+        
+        while (token != null && (token.getType() == ADDITION || token.getType() == SUBTRACTION)) {
+            Token addToken = token;
+                    match(token.getType());
+                    parentNode = new Node(ExpressionKind.OperatorExpression, addToken);
                     parentNode.setChild(0, firstTerm);
                     parentNode.setChild(1, term());
-                    return parentNode;
-            }
-            case SUBTRACTION: {
-                    Token subToken = token;
-                    match(SUBTRACTION);
-                    Node parentNode = new Node(ExpressionKind.OperatorExpression, subToken);
-                    parentNode.setChild(0, firstTerm);
-                    parentNode.setChild(1, term());
-                    return parentNode;
-            }
-            default:
-                return firstTerm;
+                    firstTerm = parentNode;
         }
+        
+        return parentNode;
     }
 
     private Node term() {
@@ -159,17 +149,18 @@ public class Parser {
         if (token == null) {
             return firstFactor;
         } else {
-            switch(token.getType()) {
-                case MULTIPLICATION:
-                    Token multToken = token;
-                    match(MULTIPLICATION);
-                    Node parentNode = new Node(ExpressionKind.OperatorExpression, multToken);
+            Node parentNode = null;
+            while (token != null && (token.getType() == MULTIPLICATION || token.getType() == TokenType.INT_DIVISION)) {
+                    Token opToken = token;
+                    parentNode = new Node(ExpressionKind.OperatorExpression, opToken);
                     parentNode.setChild(0, firstFactor);
+                    match(token.getType());
                     parentNode.setChild(1, factor());
-                    return parentNode;
-                default:
-                    return firstFactor;
+                    firstFactor = parentNode;
+                    
             }
+            return firstFactor;
+        
         }
     }
 
