@@ -164,5 +164,13 @@ public class Test_04_SemanticAnalysis {
         fail();
     }
     
+    @Test(expected = SemanticException.class)
+    public void onlyAssignInteger() {
+        List<Token> tokens = new Scanner().scan(wrap("x := (4 < 5)\n"));
+        Node parseTree = new Parser().parseStatement(tokens);
+        Analyizer.typeCheck(parseTree);
+        fail();
+    }
+    
     
 }
