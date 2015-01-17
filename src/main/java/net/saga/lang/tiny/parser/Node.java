@@ -3,15 +3,17 @@ package net.saga.lang.tiny.parser;
 import java.util.ArrayList;
 import java.util.List;
 import static java.util.stream.IntStream.range;
+import static net.saga.lang.tiny.parser.NodeType.VOID;
 import net.saga.lang.tiny.scanner.Token;
 import net.saga.lang.tiny.scanner.TokenType;
 
 public class Node {
-    public static int MAX_CHILDREN = 3;
+    public static final int MAX_CHILDREN = 3;
     
     private final ExpressionKind expressionKind;
     private final StatementKind statementKind;
     private final NodeKind nodeKind;
+    private NodeType nodeType = VOID;
     private final TokenType operationAttribute;
     private final int lineNumber;
     private final int value;
@@ -27,6 +29,7 @@ public class Node {
         this.lineNumber = token.getLineNumber();
         this.value = token.getValue();
         this.name = token.getName();
+        
     }
 
     public Node(StatementKind statementKind, Token token) {
@@ -136,5 +139,15 @@ public class Node {
         
         return builder.toString();
     }
+
+    public NodeType getNodeType() {
+        return nodeType;
+    }
+
+    public void setNodeType(NodeType nodeType) {
+        this.nodeType = nodeType;
+    }
+    
+    
     
 }
