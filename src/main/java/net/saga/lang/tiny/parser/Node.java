@@ -2,10 +2,12 @@ package net.saga.lang.tiny.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import static java.util.stream.IntStream.range;
 import net.saga.lang.tiny.scanner.Token;
 import net.saga.lang.tiny.scanner.TokenType;
 
 public class Node {
+    public static int MAX_CHILDREN = 3;
     
     private final ExpressionKind expressionKind;
     private final StatementKind statementKind;
@@ -50,6 +52,9 @@ public class Node {
     }
 
     public Node getChild(int i) {
+        if (i >= children.size()) {
+            return null;
+        }
         return children.get(i);
     }
 
@@ -81,6 +86,55 @@ public class Node {
         this.next = next;
     }
 
+    public String toString() {
+        return toString(0);
+    }
     
+    private String toString(int indent) {
+        StringBuilder builder = new StringBuilder();
+        range(0, indent).forEach((i)->builder.append("    "));
+        
+        builder.append(lineNumber).append(":{");
+        switch(nodeKind) {
+            case StatementNode:
+                builder.append(this.statementKind);
+                
+                for (Node child : children) {
+                    builder.append('\n');
+                    builder.append(child.toString(indent + 1));
+                }
+                break;
+            case ExpressionNode:
+                switch(expressionKind) {
+            case OperatorExpression:
+                builder.append(operationAttribute);
+                for (Node child : children) {
+                    builder.append('\n');
+                    builder.append(child.toString(indent + 1));
+                }
+                break;
+            case ConstantExpression:
+                builder.append(value);
+                break;
+            case IdentifierExpression:
+                builder.append(name);
+                break;
+            default:
+                throw new AssertionError(expressionKind.name());
+                    
+                }
+                break;
+            default:
+                throw new AssertionError(nodeKind.name());
+            
+        }
+        
+        builder.append("}\n");
+        if (next != null) {
+            builder.append(next.toString(indent));
+        }
+        
+        return builder.toString();
+    }
     
 }

@@ -73,9 +73,15 @@ public class Parser {
             return firstNode;
         }
         
-        while (token != null && (token.getType() != TokenType.ELSE) && token.getType() != TokenType.UNTIL&& token.getType() != TokenType.END){
+        Node node = firstNode;
+        
+        while (token != null && (token.getType() != TokenType.ELSE) && token.getType() != TokenType.UNTIL && token.getType() != TokenType.END){
+            
             match(SEMICOLON);
-            firstNode.setNext(statement());
+            if (token != null) {
+                node.setNext(statement());
+                node = node.getNext();
+            }
         } 
         
         return firstNode;

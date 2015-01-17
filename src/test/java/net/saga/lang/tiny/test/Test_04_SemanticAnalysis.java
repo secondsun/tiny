@@ -33,6 +33,19 @@ import org.junit.Test;
 public class Test_04_SemanticAnalysis {
 
     @Test
+    public void populateSimpleTable() {
+        String program = "write x;";
+        List<Token> tokens = new Scanner().scan(wrap(program));
+        Node parseTree = new Parser().parseProgram(tokens);
+        SymbolTable table = Analyizer.buildSymbolTable(parseTree);
+        
+        assertEquals(1, table.size());
+        assertEquals(1, table.get("x").size());
+        assertEquals((Integer)1, table.get("x").get(0).lineNumber);
+        assertEquals((Integer)0, table.get("x").get(0).memoryLocation);
+    }
+    
+    @Test
     public void populateSymbolTable() throws IOException {
         String program = IOUtils.toString(Test_04_SemanticAnalysis.class.getClassLoader().getResourceAsStream("sample.tny"));
         List<Token> tokens = new Scanner().scan(wrap(program));

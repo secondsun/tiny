@@ -596,7 +596,35 @@ public class Test_02_Parser {
     public void parseProgram() throws IOException {
         String program = IOUtils.toString(Test_02_Parser.class.getClassLoader().getResourceAsStream("sample.tny"));
         List<Token> tokens = new Scanner().scan(wrap(program));
-        Node parseTree = new Parser().parseProgram(tokens);
+        Node node = new Parser().parseProgram(tokens);
+        
+        assertEquals(StatementKind.READ, node.getStatementKind());
+        assertEquals("x", node.getName());
+        
+        node = node.getNext();
+        
+        assertEquals(StatementKind.IF, node.getStatementKind());
+        node = node.getChild(1);
+        
+        assertEquals(StatementKind.ASSIGN, node.getStatementKind());
+        assertEquals("fact", node.getName());
+        
+        node = node.getNext();
+        
+        assertEquals(StatementKind.REPEAT, node.getStatementKind());
+        
+        node = node.getChild(1);
+        
+        assertEquals(ExpressionKind.OperatorExpression, node.getExpressionKind());
+        assertEquals(TokenType.EQ, node.getOperationAttribute());
+        
+        assertEquals(ExpressionKind.IdentifierExpression, node.getChild(0).getExpressionKind());
+        assertEquals("x", node.getChild(0).getName());
+        
+        assertEquals(ExpressionKind.ConstantExpression, node.getChild(1).getExpressionKind());
+        assertEquals(0, node.getChild(1).getValue());
+        
+        
     }
 
 }
