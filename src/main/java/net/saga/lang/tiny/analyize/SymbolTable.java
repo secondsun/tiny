@@ -39,8 +39,8 @@ public class SymbolTable extends AbstractMap<String, List<SymbolTableEntry>> {
         
     }
 
-    private void populateMap(Node parseTree) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public int getAddress(String name) {
+        return get(name).get(0).memoryLocation;
     }
     
     
