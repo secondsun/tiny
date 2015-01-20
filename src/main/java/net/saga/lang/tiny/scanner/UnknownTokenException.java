@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package net.saga.lang.tiny.test;
+package net.saga.lang.tiny.scanner;
 
-import static org.junit.Assert.fail;
-import org.junit.Test;
+/**
+ *
+ * @author summers
+ */
+public class UnknownTokenException extends RuntimeException {
 
-public class Test_03_Parsing_Error_Handling {
-
-    @Test
-    public void failReminder() {
-        fail();
+    public UnknownTokenException(String message) {
+        super(message);
     }
     
 }

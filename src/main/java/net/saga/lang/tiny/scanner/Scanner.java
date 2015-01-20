@@ -18,7 +18,6 @@ package net.saga.lang.tiny.scanner;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import net.saga.lang.tiny.scanner.TokenType;
 
 public class Scanner {
 
@@ -184,10 +183,5 @@ public class Scanner {
     }
 
 
-    public static class UnknownTokenException extends RuntimeException {
-        public UnknownTokenException(String message) {
-            super(message);
-        }
-    }
     
 }
