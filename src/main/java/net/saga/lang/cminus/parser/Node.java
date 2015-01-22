@@ -19,8 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import static java.util.stream.IntStream.range;
 import static net.saga.lang.cminus.parser.NodeType.VOID;
-import net.saga.lang.tiny.scanner.Token;
-import net.saga.lang.tiny.scanner.TokenType;
+import net.saga.lang.cminus.scanner.Token;
+import net.saga.lang.cminus.scanner.TokenType;
 
 public class Node {
     public static final int MAX_CHILDREN = 3;
@@ -136,6 +136,9 @@ public class Node {
                 break;
             case IdentifierExpression:
                 builder.append(name);
+                break;
+            case AssignmentExpression:
+                builder.append(getChild(0).name).append("=").append(getChild(1).toString());
                 break;
             default:
                 throw new AssertionError(expressionKind.name());

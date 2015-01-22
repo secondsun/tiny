@@ -16,5 +16,5 @@
 package net.saga.lang.cminus.parser;
 
 public enum StatementKind {
-    IF, REPEAT, ASSIGN,READ,WRITE
+    IF, REPEAT, READ, WRITE, EMPTY, COMPOUND, WHILE, RETURN
 }

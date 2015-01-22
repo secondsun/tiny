@@ -28,6 +28,7 @@ import net.saga.lang.cminus.parser.StatementKind;
 import net.saga.lang.cminus.scanner.Scanner;
 import net.saga.lang.cminus.scanner.Token;
 import net.saga.lang.cminus.scanner.TokenType;
+import static net.saga.lang.cminus.scanner.TokenType.PLUS;
 import org.apache.commons.io.IOUtils;
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -82,6 +83,28 @@ public class Test_02_Parser {
         assertEquals(1, root.getLineNumber());
     }
 
+    @Test
+    public void parseIdentifier() {
+
+        Node root = new Parser().parseExpression(new Scanner().scan(wrap("x")));
+        assertEquals(ExpressionNode, root.getNodeKind());
+        assertEquals(ExpressionKind.IdentifierExpression, root.getExpressionKind());
+        assertEquals("x", root.getName());
+
+        root = new Parser().parseExpression(new Scanner().scan(wrap("x[4]")));
+        assertEquals(ExpressionNode, root.getNodeKind());
+        assertEquals(ExpressionKind.IdentifierExpression, root.getExpressionKind());
+        assertEquals("x", root.getName());
+
+        
+        Node expression = root.getChild(0);
+        assertEquals(ExpressionNode, expression.getNodeKind());
+        assertEquals(ExpressionKind.ConstantExpression, expression.getExpressionKind());
+        assertEquals(TokenType.NUMBER, expression.getOperationAttribute());
+        assertEquals(4, expression.getValue());
+
+    }
+    
     /**
      * This test checks that our parser supports the grammar.
      *
@@ -263,7 +286,7 @@ public class Test_02_Parser {
 
     @Test
     public void parseComparisonEQ() {
-        Node root = new Parser().parseExpression(new Scanner().scan(wrap("4 = 16")));
+        Node root = new Parser().parseExpression(new Scanner().scan(wrap("4 == 16")));
         assertEquals(ExpressionNode, root.getNodeKind());
         assertEquals(ExpressionKind.OperatorExpression, root.getExpressionKind());
         assertEquals(TokenType.EQ, root.getOperationAttribute());
@@ -283,8 +306,29 @@ public class Test_02_Parser {
     }
 
     @Test
-    public void parseComplexCompatison() {
-        Node root = new Parser().parseExpression(new Scanner().scan(wrap("4 = (3 + 1)")));
+    public void parseComparisonAllTheRest() {
+        Node root = new Parser().parseExpression(new Scanner().scan(wrap("3 <= 2")));
+        
+        assertEquals(TokenType.LTE, root.getOperationAttribute());
+        
+        root = new Parser().parseExpression(new Scanner().scan(wrap("3 > 2")));
+        
+        assertEquals(TokenType.GT, root.getOperationAttribute());
+        
+        root = new Parser().parseExpression(new Scanner().scan(wrap("3 >= 2")));
+        
+        assertEquals(TokenType.GTE, root.getOperationAttribute());
+        
+        root = new Parser().parseExpression(new Scanner().scan(wrap("3 != 2")));
+        assertEquals(TokenType.NE, root.getOperationAttribute());
+        
+    }
+
+    
+    
+    @Test
+    public void parseComplexComparison() {
+        Node root = new Parser().parseExpression(new Scanner().scan(wrap("4 == (3 + 1)")));
         assertEquals(ExpressionNode, root.getNodeKind());
         assertEquals(ExpressionKind.OperatorExpression, root.getExpressionKind());
         assertEquals(TokenType.EQ, root.getOperationAttribute());
@@ -334,28 +378,49 @@ public class Test_02_Parser {
     @Test
     public void parseAssignment() {
 
-        Node root = new Parser().parseStatement(new Scanner().scan(wrap("x := 4")));
-        assertEquals(StatementNode, root.getNodeKind());
-        assertEquals(StatementKind.ASSIGN, root.getStatementKind());
-        assertEquals("x", root.getName());
+        Node root = new Parser().parseExpression(new Scanner().scan(wrap("x = 4")));
+        assertEquals(ExpressionNode, root.getNodeKind());
+        assertEquals(ExpressionKind.AssignmentExpression, root.getExpressionKind());
+        assertEquals("x", root.getChild(0).getName());
 
-        Node expression = root.getChild(0);
+        Node expression = root.getChild(1);
         assertEquals(ExpressionNode, expression.getNodeKind());
         assertEquals(ExpressionKind.ConstantExpression, expression.getExpressionKind());
         assertEquals(TokenType.NUMBER, expression.getOperationAttribute());
         assertEquals(4, expression.getValue());
 
+        
+        root = new Parser().parseExpression(new Scanner().scan(wrap("x[5] = 4")));
+        assertEquals(ExpressionNode, root.getNodeKind());
+        assertEquals(ExpressionKind.AssignmentExpression, root.getExpressionKind());
+        assertEquals("x", root.getChild(0).getName());
+
+        Node index = root.getChild(0).getChild(0);
+        assertEquals(ExpressionNode, index.getNodeKind());
+        assertEquals(ExpressionKind.ConstantExpression, index.getExpressionKind());
+        assertEquals(TokenType.NUMBER, index.getOperationAttribute());
+        assertEquals(5, index.getValue());
+        
+         expression = root.getChild(1);
+        assertEquals(ExpressionNode, expression.getNodeKind());
+        assertEquals(ExpressionKind.ConstantExpression, expression.getExpressionKind());
+        assertEquals(TokenType.NUMBER, expression.getOperationAttribute());
+        assertEquals(4, expression.getValue());
+        
     }
 
+    
+    
     @Test
     public void parseComplexAssignment() {
 
-        Node root = new Parser().parseStatement(new Scanner().scan(wrap("x := (3 + 4)")));
-        assertEquals(StatementNode, root.getNodeKind());
-        assertEquals(StatementKind.ASSIGN, root.getStatementKind());
-        assertEquals("x", root.getName());
+        Node root = new Parser().parseExpression(new Scanner().scan(wrap("x = (3 + 4)")));
+        
+        assertEquals(ExpressionNode, root.getNodeKind());
+        assertEquals(ExpressionKind.AssignmentExpression, root.getExpressionKind());
+        assertEquals("x", root.getChild(0).getName());
 
-        Node expression = root.getChild(0);
+        Node expression = root.getChild(1);
         assertEquals(ExpressionNode, expression.getNodeKind());
         assertEquals(ExpressionKind.OperatorExpression, expression.getExpressionKind());
         assertEquals(TokenType.PLUS, expression.getOperationAttribute());
@@ -376,26 +441,55 @@ public class Test_02_Parser {
     }
 
     @Test
+    public void parseEmptyStatement() {    
+        Node root = new Parser().parseStatement(new Scanner().scan(wrap(";")));
+        assertEquals(StatementNode, root.getNodeKind());
+        assertEquals(StatementKind.EMPTY, root.getStatementKind());
+        
+        root = new Parser().parseStatement(new Scanner().scan(wrap(";;;")));
+        
+        assertEquals(StatementNode, root.getNodeKind());
+        assertEquals(StatementKind.EMPTY, root.getStatementKind());
+        
+        root = root.getNext();
+        
+        assertEquals(StatementNode, root.getNodeKind());
+        assertEquals(StatementKind.EMPTY, root.getStatementKind());
+        
+        root = root.getNext();
+        
+        assertEquals(StatementNode, root.getNodeKind());
+        assertEquals(StatementKind.EMPTY, root.getStatementKind());
+        
+        root = root.getNext();
+        
+        assertNull(root);
+        
+        
+    }
+    
+    
+    @Test
     public void parseMultipleAssignment() {
 
-        Node root = new Parser().parseStatement(new Scanner().scan(wrap("x := 4;\n"
-                + "y:=7")));
-        assertEquals(StatementNode, root.getNodeKind());
-        assertEquals(StatementKind.ASSIGN, root.getStatementKind());
-        assertEquals("x", root.getName());
+        Node root = new Parser().parseStatement(new Scanner().scan(wrap("x = 4;\n"
+                + "y=7;")));
+        assertEquals(ExpressionNode, root.getNodeKind());
+        assertEquals(ExpressionKind.AssignmentExpression, root.getExpressionKind());
+        assertEquals("x", root.getChild(0).getName());
 
-        Node expression = root.getChild(0);
+        Node expression = root.getChild(1);
         assertEquals(ExpressionNode, expression.getNodeKind());
         assertEquals(ExpressionKind.ConstantExpression, expression.getExpressionKind());
         assertEquals(TokenType.NUMBER, expression.getOperationAttribute());
         assertEquals(4, expression.getValue());
 
         root = root.getNext();
-        assertEquals(StatementNode, root.getNodeKind());
-        assertEquals(StatementKind.ASSIGN, root.getStatementKind());
-        assertEquals("y", root.getName());
+        assertEquals(ExpressionNode, root.getNodeKind());
+        assertEquals(ExpressionKind.AssignmentExpression, root.getExpressionKind());
+        assertEquals("y", root.getChild(0).getName());
 
-        expression = root.getChild(0);
+        expression = root.getChild(1);
         assertEquals(ExpressionNode, expression.getNodeKind());
         assertEquals(ExpressionKind.ConstantExpression, expression.getExpressionKind());
         assertEquals(TokenType.NUMBER, expression.getOperationAttribute());
@@ -403,117 +497,17 @@ public class Test_02_Parser {
 
     }
 
-    /**
-     *
-     *
-     * Let's add read and write statements.
-     *
-     * The grammar should now be
-     *
-     * stmt-sequence -> stmt-sequence; statement | statement statement ->
-     * assign-stmt | read-stmt | write-stmt assign-stmt -> identifier | := exp
-     * read-stmt -> read identifier write-stmt -> write exp exp -> simple-exp
-     * comparison-op simple-exp | simple-exp comparison-op -> &lt; | =
-     * simple-exp -> simple-exp addop term | term addop -> + | - term -> term
-     * mulop factor | factor mulop -> * factor -> ( factor ) | number |
-     * identifier
-     *
-     */
     @Test
-    public void parseRead() {
-
-        Node root = new Parser().parseStatement(new Scanner().scan(wrap("read x")));
-        assertEquals(StatementNode, root.getNodeKind());
-        assertEquals(StatementKind.READ, root.getStatementKind());
-        assertEquals("x", root.getName());
+    public void parseCompoundStatement() {
+        Node root = new Parser().parseStatement(new Scanner().scan(wrap("{42;18;33;}")));
+        assertEquals(StatementKind.COMPOUND, root.getStatementKind());
+        
+        assertEquals(42, root.getChild(0).getValue());//We know that Constant Expressions already work so skip to value
+        assertEquals(18, root.getChild(0).getNext().getValue());
+        assertEquals(33, root.getChild(0).getNext().getNext().getValue());
 
     }
 
-    @Test
-    public void parseWrite() {
-
-        Node root = new Parser().parseStatement(new Scanner().scan(wrap("write 4")));
-        assertEquals(StatementNode, root.getNodeKind());
-        assertEquals(StatementKind.WRITE, root.getStatementKind());
-
-        Node expression = root.getChild(0);
-        assertEquals(ExpressionNode, expression.getNodeKind());
-        assertEquals(ExpressionKind.ConstantExpression, expression.getExpressionKind());
-        assertEquals(TokenType.NUMBER, expression.getOperationAttribute());
-        assertEquals(4, expression.getValue());
-
-    }
-
-    @Test
-    public void parseWriteExpression() {
-
-        Node root = new Parser().parseStatement(new Scanner().scan(wrap("write (4* 6)")));
-        assertEquals(StatementNode, root.getNodeKind());
-        assertEquals(StatementKind.WRITE, root.getStatementKind());
-
-        Node expression = root.getChild(0);
-        assertEquals(ExpressionNode, expression.getNodeKind());
-        assertEquals(ExpressionKind.OperatorExpression, expression.getExpressionKind());
-        assertEquals(TokenType.MULTIPLY, expression.getOperationAttribute());
-
-    }
-
-    /**
-     *
-     *
-     * Let's add repeate statements
-     *
-     * The grammar should now be
-     *
-     * stmt-sequence -> stmt-sequence; statement | statement statement ->
-     * assign-stmt | read-stmt | write-stmt | repeate-stmt assign-stmt ->
-     * identifier | := exp read-stmt -> read identifier write-stmt -> write exp
-     * exp -> simple-exp comparison-op simple-exp | simple-exp comparison-op ->
-     * &lt; | = simple-exp -> simple-exp addop term | term addop -> + | - term
-     * -> term mulop factor | factor mulop -> * factor -> ( factor ) | number |
-     * identifier
-     *
-     */
-    @Test
-    public void parseRepeat() {
-        Node root = new Parser().parseStatement(new Scanner().scan(wrap("repeat \n"
-                + "x:=1 \n"
-                + "until x = 1;")));
-
-        assertEquals(StatementNode, root.getNodeKind());
-        assertEquals(StatementKind.REPEAT, root.getStatementKind());
-
-        Node body = root.getChild(0);
-
-        assertEquals(StatementNode, body.getNodeKind());
-        assertEquals(StatementKind.ASSIGN, body.getStatementKind());
-        assertEquals("x", body.getName());
-
-        Node value = body.getChild(0);
-        assertEquals(ExpressionNode, value.getNodeKind());
-        assertEquals(ExpressionKind.ConstantExpression, value.getExpressionKind());
-        assertEquals(1, value.getValue());
-
-        Node until = root.getChild(1);
-
-        assertEquals(ExpressionNode, until.getNodeKind());
-        assertEquals(ExpressionKind.OperatorExpression, until.getExpressionKind());
-        assertEquals(TokenType.EQ, until.getOperationAttribute());
-
-        Node lhs = until.getChild(0);
-        Node rhs = until.getChild(1);
-
-        assertEquals(ExpressionNode, lhs.getNodeKind());
-        assertEquals(ExpressionKind.IdentifierExpression, lhs.getExpressionKind());
-        assertEquals(TokenType.IDENTIFIER, lhs.getOperationAttribute());
-        assertEquals("x", lhs.getName());
-
-        assertEquals(ExpressionNode, rhs.getNodeKind());
-        assertEquals(ExpressionKind.ConstantExpression, rhs.getExpressionKind());
-        assertEquals(TokenType.NUMBER, rhs.getOperationAttribute());
-        assertEquals(1, rhs.getValue());
-
-    }
 
     /**
      * Now we can incorporate statements. Let's begin with IF.
@@ -533,8 +527,8 @@ public class Test_02_Parser {
      *
      */
     @Test
-    public void parseIf() {
-        Node root = new Parser().parseStatement(new Scanner().scan(wrap("if 3 < 4 then x := 5 end")));
+    public void parseIfExpression() {
+        Node root = new Parser().parseStatement(new Scanner().scan(wrap("if (3 < 4) x = 5;")));
         assertEquals(StatementNode, root.getNodeKind());
         assertEquals(StatementKind.IF, root.getStatementKind());
 
@@ -558,11 +552,11 @@ public class Test_02_Parser {
         assertEquals(ExpressionKind.OperatorExpression, testExpression.getExpressionKind());
         assertEquals(TokenType.LT, testExpression.getOperationAttribute());
 
-        assertEquals(StatementNode, thenStatement.getNodeKind());
-        assertEquals(StatementKind.ASSIGN, thenStatement.getStatementKind());
-        assertEquals("x", thenStatement.getName());
+        assertEquals(ExpressionNode, thenStatement.getNodeKind());
+        assertEquals(ExpressionKind.AssignmentExpression, thenStatement.getExpressionKind());
+        assertEquals("x", thenStatement.getChild(0).getName());
 
-        Node assignmentValue = thenStatement.getChild(0);
+        Node assignmentValue = thenStatement.getChild(1);
         assertEquals(ExpressionNode, assignmentValue.getNodeKind());
         assertEquals(ExpressionKind.ConstantExpression, assignmentValue.getExpressionKind());
         assertEquals(TokenType.NUMBER, assignmentValue.getOperationAttribute());
@@ -570,9 +564,11 @@ public class Test_02_Parser {
 
     }
 
+    
+    
     @Test
     public void parseIfThenElse() {
-        Node root = new Parser().parseStatement(new Scanner().scan(wrap("if 3 < 4 then x := 5 else x := 6 end")));
+        Node root = new Parser().parseStatement(new Scanner().scan(wrap("if (3 < 4) x = 5; else x = 6; ")));
         assertEquals(StatementNode, root.getNodeKind());
         assertEquals(StatementKind.IF, root.getStatementKind());
 
@@ -596,11 +592,11 @@ public class Test_02_Parser {
         assertEquals(ExpressionKind.OperatorExpression, testExpression.getExpressionKind());
         assertEquals(TokenType.LT, testExpression.getOperationAttribute());
 
-        assertEquals(StatementNode, elseStatement.getNodeKind());
-        assertEquals(StatementKind.ASSIGN, elseStatement.getStatementKind());
-        assertEquals("x", elseStatement.getName());
+        assertEquals(ExpressionNode, elseStatement.getNodeKind());
+        assertEquals(ExpressionKind.AssignmentExpression, elseStatement.getExpressionKind());
+        assertEquals("x", elseStatement.getChild(0).getName());
 
-        Node assignmentValue = elseStatement.getChild(0);
+        Node assignmentValue = elseStatement.getChild(1);
         assertEquals(ExpressionNode, assignmentValue.getNodeKind());
         assertEquals(ExpressionKind.ConstantExpression, assignmentValue.getExpressionKind());
         assertEquals(TokenType.NUMBER, assignmentValue.getOperationAttribute());
@@ -608,39 +604,107 @@ public class Test_02_Parser {
 
     }
 
+    
     @Test
-    public void parseProgram() throws IOException {
-        String program = IOUtils.toString(Test_02_Parser.class.getClassLoader().getResourceAsStream("sample.tny"));
-        List<Token> tokens = new Scanner().scan(wrap(program));
-        Node node = new Parser().parseProgram(tokens);
+    public void parseIfThenElseCompountStatement() {
+        Node root = new Parser().parseStatement(new Scanner().scan(wrap("if (3 < 4) {x = 5;} else {x = 6;} ")));
+        assertEquals(StatementNode, root.getNodeKind());
+        assertEquals(StatementKind.IF, root.getStatementKind());
+
+        Node thenStatement = root.getChild(1);
+        Node elseStatement = root.getChild(2);
+
+        assertEquals(StatementKind.COMPOUND, thenStatement.getStatementKind());
+        assertNull(thenStatement.getChild(1));
         
-        assertEquals(StatementKind.READ, node.getStatementKind());
-        assertEquals("x", node.getName());
-        
-        node = node.getNext();
-        
-        assertEquals(StatementKind.IF, node.getStatementKind());
-        node = node.getChild(1);
-        
-        assertEquals(StatementKind.ASSIGN, node.getStatementKind());
-        assertEquals("fact", node.getName());
-        
-        node = node.getNext();
-        
-        assertEquals(StatementKind.REPEAT, node.getStatementKind());
-        
-        node = node.getChild(1);
-        
-        assertEquals(ExpressionKind.OperatorExpression, node.getExpressionKind());
-        assertEquals(TokenType.EQ, node.getOperationAttribute());
-        
-        assertEquals(ExpressionKind.IdentifierExpression, node.getChild(0).getExpressionKind());
-        assertEquals("x", node.getChild(0).getName());
-        
-        assertEquals(ExpressionKind.ConstantExpression, node.getChild(1).getExpressionKind());
-        assertEquals(0, node.getChild(1).getValue());
-        
+        assertEquals(StatementKind.COMPOUND, elseStatement.getStatementKind());
+        assertNull(elseStatement.getChild(1));
         
     }
+    
+    @Test
+    public void testWhileStatement() {
+        Node root = new Parser().parseStatement(new Scanner().scan(wrap("while (3 < 4) x = 5;  ")));
+        Node testExpression = root.getChild(0);
+        Node bodyStatement = root.getChild(1);
+
+        Node lhs = testExpression.getChild(0);
+        Node rhs = testExpression.getChild(1);
+
+        assertEquals(StatementKind.WHILE, root.getStatementKind());
+        
+        assertEquals(ExpressionNode, lhs.getNodeKind());
+        assertEquals(ExpressionKind.ConstantExpression, lhs.getExpressionKind());
+        assertEquals(TokenType.NUMBER, lhs.getOperationAttribute());
+        assertEquals(3, lhs.getValue());
+
+        assertEquals(ExpressionNode, rhs.getNodeKind());
+        assertEquals(ExpressionKind.ConstantExpression, rhs.getExpressionKind());
+        assertEquals(TokenType.NUMBER, rhs.getOperationAttribute());
+        assertEquals(4, rhs.getValue());
+
+        assertEquals(ExpressionNode, testExpression.getNodeKind());
+        assertEquals(ExpressionKind.OperatorExpression, testExpression.getExpressionKind());
+        assertEquals(TokenType.LT, testExpression.getOperationAttribute());
+
+        assertEquals(ExpressionNode, bodyStatement.getNodeKind());
+        assertEquals(ExpressionKind.AssignmentExpression, bodyStatement.getExpressionKind());
+        assertEquals("x", bodyStatement.getChild(0).getName());
+
+        Node assignmentValue = bodyStatement.getChild(1);
+        assertEquals(ExpressionNode, assignmentValue.getNodeKind());
+        assertEquals(ExpressionKind.ConstantExpression, assignmentValue.getExpressionKind());
+        assertEquals(TokenType.NUMBER, assignmentValue.getOperationAttribute());
+        assertEquals(5, assignmentValue.getValue());
+        
+    }
+    
+    @Test
+    public void testParseReturnStatement() {
+        Node root = new Parser().parseStatement(new Scanner().scan(wrap("return;")));
+        
+        assertEquals(StatementKind.RETURN, root.getStatementKind());
+        
+        root = new Parser().parseStatement(new Scanner().scan(wrap("return x + 1;")));
+        
+        assertEquals(ExpressionKind.OperatorExpression, root.getChild(0).getExpressionKind());
+        assertEquals(PLUS, root.getChild(0).getOperationAttribute());
+    }
+    
+//    @Test
+//    public void parseProgram() throws IOException {
+//        String program = IOUtils.toString(Test_02_Parser.class.getClassLoader().getResourceAsStream("sample.tny"));
+//        List<Token> tokens = new Scanner().scan(wrap(program));
+//        Node node = new Parser().parseProgram(tokens);
+//        
+//        assertEquals(StatementKind.READ, node.getStatementKind());
+//        assertEquals("x", node.getName());
+//        
+//        node = node.getNext();
+//        
+//        assertEquals(StatementKind.IF, node.getStatementKind());
+//        node = node.getChild(1);
+//        
+//        assertEquals(ExpressionNode, node.getNodeKind());
+//        assertEquals(ExpressionKind.AssignmentExpression, node.getExpressionKind());
+//        assertEquals("fact", node.getName());
+//        
+//        node = node.getNext();
+//        
+//        assertEquals(StatementKind.REPEAT, node.getStatementKind());
+//        
+//        node = node.getChild(1);
+//        
+//        assertEquals(ExpressionKind.OperatorExpression, node.getExpressionKind());
+//        assertEquals(TokenType.EQ, node.getOperationAttribute());
+//        
+//        assertEquals(ExpressionKind.IdentifierExpression, node.getChild(0).getExpressionKind());
+//        assertEquals("x", node.getChild(0).getName());
+//        
+//        assertEquals(ExpressionKind.ConstantExpression, node.getChild(1).getExpressionKind());
+//        assertEquals(0, node.getChild(1).getValue());
+//        
+//        
+//    }
 
 }

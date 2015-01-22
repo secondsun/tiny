@@ -1,17 +1,17 @@
 /**
  * Copyright (C) 2015 Summers Pittman (secondsun@gmail.com)
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package net.saga.lang.cminus.parser;
 
@@ -19,15 +19,77 @@ import java.util.Iterator;
 import java.util.List;
 import net.saga.lang.cminus.scanner.Token;
 import net.saga.lang.cminus.scanner.TokenType;
-
+import static net.saga.lang.cminus.parser.ExpressionKind.ConstantExpression;
+import static net.saga.lang.cminus.parser.ExpressionKind.IdentifierExpression;
+import static net.saga.lang.cminus.parser.ExpressionKind.OperatorExpression;
+import static net.saga.lang.cminus.parser.Parser.FactorToken.ID;
+import static net.saga.lang.cminus.scanner.TokenType.*;
 
 public class Parser {
+
+    private static final TokenType[] RELOP = {LTE, LT, GT, GTE, EQ, NE};
+
+    private static final TokenType[] STATEMENT = {SEMI_COLON, IDENTIFIER, LPAREN, NUMBER,//Expression
+        L_BRACE,//Compound
+        IF,//selection
+        WHILE, //iteration
+        RETURN//return
+    };
+
     
+
+    public enum FactorToken {
+
+        L_PAREN, NUMBER, ID;
+
+        public static FactorToken fromToken(Token token) {
+            switch (token.getType()) {
+                case LPAREN:
+                    return L_PAREN;
+                case NUMBER:
+                    return NUMBER;
+                case IDENTIFIER:
+                    return ID;
+                default:
+                    throw new IllegalStateException("Expecting a factor token, found " + token);
+            }
+        }
+
+    }
+
+    public enum StatementToken {
+
+        SEMI_COLON, IDENTIFIER, LPAREN, NUMBER, L_BRACE, IF, WHILE, RETURN;
+
+        public static StatementToken fromToken(Token token) {
+            switch (token.getType()) {
+                case SEMI_COLON:
+                    return SEMI_COLON;
+                case IDENTIFIER:
+                    return IDENTIFIER;
+                case LPAREN:
+                    return LPAREN;
+                case NUMBER:
+                    return NUMBER;
+                case L_BRACE:
+                    return L_BRACE;
+                case IF:
+                    return IF;
+                case WHILE:
+                    return WHILE;
+                case RETURN:
+                    return RETURN;
+                default:
+                    throw new IllegalStateException("Expecting a factor token, found " + token);
+            }
+        }
+    }
+
     private Iterator<Token> tokensIter;
     private Token token;
-    
+
     public void setTokens(List<Token> tokens) {
-        
+
         tokensIter = tokens.iterator();
     }
 
@@ -50,17 +112,17 @@ public class Parser {
         nextToken();
         return statementList();
     }
-    
+
     public Node parseExpression(List<Token> tokens) {
         tokensIter = tokens.iterator();
         nextToken();
         return expression();
     }
-    
-    
+
     /**
      * Called after setTokens and nextToken has moved to first token.
-     * @return 
+     *
+     * @return
      */
     public Node parse() {
         throw new IllegalStateException("Not yet implemented");
@@ -75,14 +137,185 @@ public class Parser {
     }
 
     private Node expression() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Node expressionNode = simpleExpression();
+        if (isToken(ASSIGN)) {
+            Node parentNode = new Node(ExpressionKind.AssignmentExpression, token);
+            match(token.getType());
+            parentNode.setChild(0, expressionNode);
+            parentNode.setChild(1, expression());
+            expressionNode = parentNode;
+        }
+        return expressionNode;
     }
 
     private Node statementList() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Node statementNode = statement();
+        Node listNode = statementNode;
+        while (isToken(STATEMENT)) {
+                statementNode.setNext(statement());
+                statementNode = statementNode.getNext();
+        }
+
+        return listNode;
+        
     }
 
     
+    private Node statement() {
+        Node statementNode = null;
+        switch(StatementToken.fromToken(token)) {
+                case SEMI_COLON:
+                    statementNode = new Node(StatementKind.EMPTY, token);
+                    match(SEMI_COLON);
+                    break;
+                case IDENTIFIER:
+                case LPAREN:
+                case NUMBER:
+                    statementNode = expressionStatement();
+                    break;
+                case L_BRACE:
+                    statementNode = compoundStatement();
+                    break;
+                case IF:
+                    statementNode = ifStatement();
+                    break;
+                case WHILE:
+                    statementNode = whileStatement();
+                    break;
+                case RETURN:
+                    statementNode = returnStatement();
+                    break;
+                default:
+                    throw new AssertionError(StatementToken.fromToken(token).name());
+        }
+        return statementNode;
+    }
+
+    public Node compoundStatement() {
+        match(L_BRACE);
+        Node compoundStatementList = new Node(StatementKind.COMPOUND, token);
+        compoundStatementList.setChild(0, statementList());
+        match(R_BRACE);
+        return compoundStatementList;
+    }
+
+    private Node returnStatement() {
+        Node returnStatement = new Node(StatementKind.RETURN, token);
+        match(RETURN);
+        
+        if (!isToken(SEMI_COLON)) {
+            returnStatement.setChild(0, expression());
+        } 
+        
+        match(SEMI_COLON);
+        
+        return returnStatement;
+    }
+    
+    private Node whileStatement() {
+        Node whileNode = new Node(StatementKind.WHILE, token);
+        match(WHILE);
+        
+        whileNode.setChild(0, expression());
+        whileNode.setChild(1, statement());
+        
+        return whileNode;
+        
+    }
 
     
+    private Node ifStatement() {
+        Node ifStatementNode = new Node(StatementKind.IF, token);
+        match(IF);
+        ifStatementNode.setChild(0, expression());
+        ifStatementNode.setChild(1, statement());
+        if (isToken(ELSE)) {
+            match(ELSE);
+            ifStatementNode.setChild(2, statement());
+        }
+        return ifStatementNode;
+    }
+    
+    private Node expressionStatement() {
+        Node expressionNode = expression();
+        match(SEMI_COLON);
+        return expressionNode;
+    }
+    
+    
+    private Node simpleExpression() {
+        Node simpleExpressionNode = additiveExpression();
+        if (isToken(RELOP)) {
+            Node parentNode = new Node(OperatorExpression, token);
+            match(token.getType());
+            parentNode.setChild(0, simpleExpressionNode);
+            parentNode.setChild(1, additiveExpression());
+            simpleExpressionNode = parentNode;
+        }
+        return simpleExpressionNode;
+    }
+
+    private Node additiveExpression() {
+        Node termNode = term();
+        while (isToken(PLUS, MINUS)) {
+            Node parentNode = new Node(OperatorExpression, token);
+            match(token.getType());
+            parentNode.setChild(0, termNode);
+            parentNode.setChild(1, term());
+            termNode = parentNode;
+        }
+        return termNode;
+    }
+
+    private Node term() {
+        Node termNode = factor();
+        while (isToken(MULTIPLY, DIVIDE)) {
+            Node parentNode = new Node(OperatorExpression, token);
+            match(token.getType());
+            parentNode.setChild(0, termNode);
+            parentNode.setChild(1, factor());
+            termNode = parentNode;
+        }
+        return termNode;
+    }
+
+    private Node factor() {
+        Node factorNode;
+        switch (FactorToken.fromToken(token)) {
+            case L_PAREN:
+                match(TokenType.LPAREN);
+                factorNode = expression();
+                match(TokenType.RPAREN);
+                break;
+            case NUMBER:
+                factorNode = new Node(ConstantExpression, token);
+                match(NUMBER);
+                break;
+            case ID:
+                factorNode = new Node(IdentifierExpression, token);
+                match(IDENTIFIER);
+                if (isToken(L_BRACKET)) {
+                    match(L_BRACKET);
+                    factorNode.setChild(0, expression());
+                    match(R_BRACKET);
+                }
+                break;
+            default:
+                throw new AssertionError(FactorToken.fromToken(token).name());
+        }
+        return factorNode;
+    }
+
+    private boolean isToken(TokenType... tokenType) {
+        if (token == null) {
+            return false;
+        }
+        for (TokenType type : tokenType) {
+            if (token.getType().equals(type)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
