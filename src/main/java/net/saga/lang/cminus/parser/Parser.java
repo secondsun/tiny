@@ -17,6 +17,8 @@ package net.saga.lang.cminus.parser;
 
 import java.util.Iterator;
 import java.util.List;
+import me.qmx.jitescript.internal.org.objectweb.asm.Opcodes;
+import static net.saga.lang.cminus.parser.ExpressionKind.CallExpression;
 import net.saga.lang.cminus.scanner.Token;
 import net.saga.lang.cminus.scanner.TokenType;
 import static net.saga.lang.cminus.parser.ExpressionKind.ConstantExpression;
@@ -36,7 +38,8 @@ public class Parser {
         RETURN//return
     };
 
-    
+   
+
 
     public enum FactorToken {
 
@@ -119,13 +122,19 @@ public class Parser {
         return expression();
     }
 
+    public Node parseDeclaration(List<Token> tokens) {
+        tokensIter = tokens.iterator();
+        nextToken();
+        return declarationList();
+    }
+
     /**
      * Called after setTokens and nextToken has moved to first token.
      *
      * @return
      */
     public Node parse() {
-        throw new IllegalStateException("Not yet implemented");
+        return declarationList();
     }
 
     public void match(TokenType expectedType) {
@@ -134,6 +143,96 @@ public class Parser {
         } else {
             throw new IllegalStateException("Illegal token " + token);
         }
+    }
+
+    private Node declaration() {
+        Node declNode;
+        TypeSpecifier spec;
+        switch (token.getType()) {
+            case INT:
+            case VOID:
+                TokenType type = token.getType();
+                match(type);
+                Token nameToken = token;
+                match(IDENTIFIER);
+                switch (token.getType()) {
+                    case LPAREN:
+                        match(LPAREN);
+                        declNode = new Node(DeclarationKind.FUNCTION, nameToken);
+                        declNode.setTypeSpecifier(type == VOID ? TypeSpecifier.VOID : TypeSpecifier.INT);
+                        declNode.setChild(0, params());
+                        match(RPAREN);
+                        declNode.setChild(1, compoundStatement());
+                        break;
+                    case L_BRACKET:
+                        if (type == VOID) {
+                            throw new IllegalStateException("Void array not supported");
+                        }
+                        match(L_BRACKET);
+
+                        declNode = new Node(DeclarationKind.VARIABLE, nameToken);
+                        declNode.setTypeSpecifier(TypeSpecifier.INT_ARRAY);
+                        declNode.setSize(token.getValue());
+                        match(NUMBER);
+                        match(R_BRACKET);
+                        match(SEMI_COLON);
+                        break;
+                    case SEMI_COLON:
+                        declNode = new Node(DeclarationKind.VARIABLE, nameToken);
+                        declNode.setTypeSpecifier(type == VOID ? TypeSpecifier.VOID : TypeSpecifier.INT);
+                        match(SEMI_COLON);
+                        break;
+                    //done
+                    default:
+                        throw new IllegalStateException("Expected [, ;, or ( but was " + token);
+                }
+                break;
+            default:
+                throw new IllegalStateException("Expected int or void but was " + token);
+        }
+        return declNode;
+    }
+
+    
+    private Node params() {
+        if (isToken(VOID)) {
+            Node voidParams = new Node(DeclarationKind.PARAMS, token);
+            voidParams.setTypeSpecifier(TypeSpecifier.VOID);
+            match(VOID);
+            return voidParams;
+        } else {
+            Node paramNode = param();
+            Node head = paramNode;
+            while (isToken(COMMA)) {
+                match(COMMA);
+                paramNode.setNext(param());
+                paramNode = paramNode.getNext();
+            }
+            return head;
+        }
+    }
+
+    private Node param() {
+        match(INT);
+        Node paramNode = new Node(DeclarationKind.PARAMS, token);
+        paramNode.setTypeSpecifier(TypeSpecifier.INT);
+        match(IDENTIFIER);
+        if (isToken(L_BRACKET)) {
+            match(L_BRACKET);
+            match(R_BRACKET);
+            paramNode.setTypeSpecifier(TypeSpecifier.INT_ARRAY);
+        }
+        return paramNode;
+    }
+    
+    private Node declarationList() {
+        Node declList = declaration();
+        Node currentNode = declList;
+        while (token != null) {
+            currentNode.setNext(declaration());
+            currentNode = currentNode.getNext();
+        }
+        return declList;
     }
 
     private Node expression() {
@@ -152,41 +251,40 @@ public class Parser {
         Node statementNode = statement();
         Node listNode = statementNode;
         while (isToken(STATEMENT)) {
-                statementNode.setNext(statement());
-                statementNode = statementNode.getNext();
+            statementNode.setNext(statement());
+            statementNode = statementNode.getNext();
         }
 
         return listNode;
-        
+
     }
 
-    
     private Node statement() {
         Node statementNode = null;
-        switch(StatementToken.fromToken(token)) {
-                case SEMI_COLON:
-                    statementNode = new Node(StatementKind.EMPTY, token);
-                    match(SEMI_COLON);
-                    break;
-                case IDENTIFIER:
-                case LPAREN:
-                case NUMBER:
-                    statementNode = expressionStatement();
-                    break;
-                case L_BRACE:
-                    statementNode = compoundStatement();
-                    break;
-                case IF:
-                    statementNode = ifStatement();
-                    break;
-                case WHILE:
-                    statementNode = whileStatement();
-                    break;
-                case RETURN:
-                    statementNode = returnStatement();
-                    break;
-                default:
-                    throw new AssertionError(StatementToken.fromToken(token).name());
+        switch (StatementToken.fromToken(token)) {
+            case SEMI_COLON:
+                statementNode = new Node(StatementKind.EMPTY, token);
+                match(SEMI_COLON);
+                break;
+            case IDENTIFIER:
+            case LPAREN:
+            case NUMBER:
+                statementNode = expressionStatement();
+                break;
+            case L_BRACE:
+                statementNode = compoundStatement();
+                break;
+            case IF:
+                statementNode = ifStatement();
+                break;
+            case WHILE:
+                statementNode = whileStatement();
+                break;
+            case RETURN:
+                statementNode = returnStatement();
+                break;
+            default:
+                throw new AssertionError(StatementToken.fromToken(token).name());
         }
         return statementNode;
     }
@@ -194,36 +292,68 @@ public class Parser {
     public Node compoundStatement() {
         match(L_BRACE);
         Node compoundStatementList = new Node(StatementKind.COMPOUND, token);
-        compoundStatementList.setChild(0, statementList());
+        Node localDeclarationsNode = localDeclarations();
+        if (localDeclarationsNode != null) {
+            compoundStatementList.setChild(0, localDeclarationsNode);
+            compoundStatementList.setChild(1, statementList());
+        } else {
+            compoundStatementList.setChild(0, statementList());
+        }
         match(R_BRACE);
         return compoundStatementList;
     }
 
-    private Node returnStatement() {
-        Node returnStatement = new Node(StatementKind.RETURN, token);
-        match(RETURN);
-        
-        if (!isToken(SEMI_COLON)) {
-            returnStatement.setChild(0, expression());
-        } 
-        
-        match(SEMI_COLON);
-        
-        return returnStatement;
-    }
-    
-    private Node whileStatement() {
-        Node whileNode = new Node(StatementKind.WHILE, token);
-        match(WHILE);
-        
-        whileNode.setChild(0, expression());
-        whileNode.setChild(1, statement());
-        
-        return whileNode;
-        
+     private Node localDeclarations() {
+        Node localHead = null;
+        Node currentDec = null;
+
+        while (isToken(INT, VOID)) {
+            if (currentDec == null) {
+            currentDec = declaration();
+            } else {
+                currentDec.setNext(declaration());
+                currentDec = currentDec.getNext();
+            }
+            if (!currentDec.getDeclarationKind().equals(DeclarationKind.VARIABLE)) {
+                throw new IllegalStateException("Expectign a variable declaration@" + currentDec.getLineNumber());
+            }
+            
+            if (localHead == null) {
+                localHead = currentDec;
+                
+            }
+            
+            
+            
+        }
+        return localHead;
     }
 
     
+    private Node returnStatement() {
+        Node returnStatement = new Node(StatementKind.RETURN, token);
+        match(RETURN);
+
+        if (!isToken(SEMI_COLON)) {
+            returnStatement.setChild(0, expression());
+        }
+
+        match(SEMI_COLON);
+
+        return returnStatement;
+    }
+
+    private Node whileStatement() {
+        Node whileNode = new Node(StatementKind.WHILE, token);
+        match(WHILE);
+
+        whileNode.setChild(0, expression());
+        whileNode.setChild(1, statement());
+
+        return whileNode;
+
+    }
+
     private Node ifStatement() {
         Node ifStatementNode = new Node(StatementKind.IF, token);
         match(IF);
@@ -235,14 +365,13 @@ public class Parser {
         }
         return ifStatementNode;
     }
-    
+
     private Node expressionStatement() {
         Node expressionNode = expression();
         match(SEMI_COLON);
         return expressionNode;
     }
-    
-    
+
     private Node simpleExpression() {
         Node simpleExpressionNode = additiveExpression();
         if (isToken(RELOP)) {
@@ -292,12 +421,20 @@ public class Parser {
                 match(NUMBER);
                 break;
             case ID:
-                factorNode = new Node(IdentifierExpression, token);
+                Token idToken = token;
+                factorNode = new Node(IdentifierExpression, idToken);
                 match(IDENTIFIER);
                 if (isToken(L_BRACKET)) {
                     match(L_BRACKET);
                     factorNode.setChild(0, expression());
                     match(R_BRACKET);
+                } else if (isToken(LPAREN)) {
+                    factorNode = new Node(CallExpression, idToken);
+                    match(LPAREN);
+                    if (!isToken(RPAREN)) {
+                        factorNode.setChild(0, argList());
+                    }
+                    match(RPAREN);
                 }
                 break;
             default:
@@ -306,6 +443,18 @@ public class Parser {
         return factorNode;
     }
 
+    
+    private Node argList() {
+        Node headNode = expression();
+        Node expressioNode = headNode;
+        while(isToken(COMMA)){
+            match(COMMA);
+            expressioNode.setNext(expression());
+            expressioNode = expressioNode.getNext();
+        }
+        return headNode;
+    }
+    
     private boolean isToken(TokenType... tokenType) {
         if (token == null) {
             return false;

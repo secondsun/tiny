@@ -16,5 +16,5 @@
 package net.saga.lang.cminus.parser;
 
 public enum NodeKind {
-    StatementNode, ExpressionNode
+    StatementNode, ExpressionNode, DeclarationNode
 }

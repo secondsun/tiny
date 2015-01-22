@@ -16,5 +16,5 @@
 package net.saga.lang.cminus.parser;
 
 public enum ExpressionKind {
-    OperatorExpression, ConstantExpression, IdentifierExpression, AssignmentExpression
+    OperatorExpression, ConstantExpression, IdentifierExpression, AssignmentExpression, CallExpression
 }

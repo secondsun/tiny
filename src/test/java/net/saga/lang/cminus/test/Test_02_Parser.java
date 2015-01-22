@@ -19,12 +19,15 @@ package net.saga.lang.cminus.test;
 import java.io.IOException;
 import static java.nio.CharBuffer.wrap;
 import java.util.List;
+import net.saga.lang.cminus.parser.DeclarationKind;
 import net.saga.lang.cminus.parser.ExpressionKind;
 import net.saga.lang.cminus.parser.Node;
+import net.saga.lang.cminus.parser.NodeKind;
 import static net.saga.lang.cminus.parser.NodeKind.ExpressionNode;
 import static net.saga.lang.cminus.parser.NodeKind.StatementNode;
 import net.saga.lang.cminus.parser.Parser;
 import net.saga.lang.cminus.parser.StatementKind;
+import net.saga.lang.cminus.parser.TypeSpecifier;
 import net.saga.lang.cminus.scanner.Scanner;
 import net.saga.lang.cminus.scanner.Token;
 import net.saga.lang.cminus.scanner.TokenType;
@@ -409,7 +412,28 @@ public class Test_02_Parser {
         
     }
 
-    
+
+    @Test
+    public void parseCall() throws IOException {
+        Node root = new Parser().parseExpression(new Scanner().scan(wrap("x()")));
+        assertEquals(ExpressionKind.CallExpression, root.getExpressionKind());
+        assertNull(root.getChild(0));//noParams
+        
+        root = new Parser().parseExpression(new Scanner().scan(wrap("x(foo, bar, 3+1)")));
+        assertEquals(ExpressionKind.CallExpression, root.getExpressionKind());
+        Node params = root.getChild(0);
+        assertEquals(ExpressionKind.IdentifierExpression, params.getExpressionKind());
+        assertEquals("foo", params.getName());
+        
+        params = params.getNext();
+        assertEquals(ExpressionKind.IdentifierExpression, params.getExpressionKind());
+        assertEquals("bar", params.getName());
+        
+        params = params.getNext();
+        assertEquals(ExpressionKind.OperatorExpression, params.getExpressionKind());
+        assertEquals(TokenType.PLUS, params.getOperationAttribute());
+        
+    }    
     
     @Test
     public void parseComplexAssignment() {
@@ -505,6 +529,30 @@ public class Test_02_Parser {
         assertEquals(42, root.getChild(0).getValue());//We know that Constant Expressions already work so skip to value
         assertEquals(18, root.getChild(0).getNext().getValue());
         assertEquals(33, root.getChild(0).getNext().getNext().getValue());
+        
+        //Test with declarations
+         root = new Parser().parseStatement(new Scanner().scan(wrap("{int x; int y; int z[10];42;18;33;}")));
+        assertEquals(StatementKind.COMPOUND, root.getStatementKind());
+        
+        Node decNode = root.getChild(0);
+        assertEquals("x", decNode.getName());
+        assertEquals(DeclarationKind.VARIABLE, decNode.getDeclarationKind());
+        assertEquals(TypeSpecifier.INT, decNode.getTypeSpecifier());
+        
+         decNode = decNode.getNext();
+        assertEquals("y", decNode.getName());
+        assertEquals(DeclarationKind.VARIABLE, decNode.getDeclarationKind());
+        assertEquals(TypeSpecifier.INT, decNode.getTypeSpecifier());
+        
+         decNode = decNode.getNext();
+        assertEquals("z", decNode.getName());
+        assertEquals(DeclarationKind.VARIABLE, decNode.getDeclarationKind());
+        assertEquals(TypeSpecifier.INT_ARRAY, decNode.getTypeSpecifier());
+        
+        assertEquals(42, root.getChild(1).getValue());//We know that Constant Expressions already work so skip to value
+        assertEquals(18, root.getChild(1).getNext().getValue());
+        assertEquals(33, root.getChild(1).getNext().getNext().getValue());
+        
 
     }
 
@@ -671,40 +719,80 @@ public class Test_02_Parser {
         assertEquals(PLUS, root.getChild(0).getOperationAttribute());
     }
     
-//    @Test
-//    public void parseProgram() throws IOException {
-//        String program = IOUtils.toString(Test_02_Parser.class.getClassLoader().getResourceAsStream("sample.tny"));
-//        List<Token> tokens = new Scanner().scan(wrap(program));
-//        Node node = new Parser().parseProgram(tokens);
-//        
-//        assertEquals(StatementKind.READ, node.getStatementKind());
-//        assertEquals("x", node.getName());
-//        
-//        node = node.getNext();
-//        
-//        assertEquals(StatementKind.IF, node.getStatementKind());
-//        node = node.getChild(1);
-//        
-//        assertEquals(ExpressionNode, node.getNodeKind());
-//        assertEquals(ExpressionKind.AssignmentExpression, node.getExpressionKind());
-//        assertEquals("fact", node.getName());
-//        
-//        node = node.getNext();
-//        
-//        assertEquals(StatementKind.REPEAT, node.getStatementKind());
-//        
-//        node = node.getChild(1);
-//        
-//        assertEquals(ExpressionKind.OperatorExpression, node.getExpressionKind());
-//        assertEquals(TokenType.EQ, node.getOperationAttribute());
-//        
-//        assertEquals(ExpressionKind.IdentifierExpression, node.getChild(0).getExpressionKind());
-//        assertEquals("x", node.getChild(0).getName());
-//        
-//        assertEquals(ExpressionKind.ConstantExpression, node.getChild(1).getExpressionKind());
-//        assertEquals(0, node.getChild(1).getValue());
-//        
-//        
-//    }
+    @Test
+    public void testParseVariableDeclaration() {
+        Node root = new Parser().parseDeclaration(new Scanner().scan(wrap("int x;")));
+        
+        assertEquals(NodeKind.DeclarationNode, root.getNodeKind());
+        assertEquals(DeclarationKind.VARIABLE, root.getDeclarationKind());
+        assertEquals(TypeSpecifier.INT, root.getTypeSpecifier());
+        assertEquals("x", root.getName());
+        
+        root = new Parser().parseDeclaration(new Scanner().scan(wrap("void x;")));
+        assertEquals(NodeKind.DeclarationNode, root.getNodeKind());
+        assertEquals(DeclarationKind.VARIABLE, root.getDeclarationKind());
+        assertEquals(TypeSpecifier.VOID, root.getTypeSpecifier());
+        assertEquals("x", root.getName());
+        
+        root = new Parser().parseDeclaration(new Scanner().scan(wrap("int x[14];")));
+        assertEquals(NodeKind.DeclarationNode, root.getNodeKind());
+        assertEquals(DeclarationKind.VARIABLE, root.getDeclarationKind());
+        assertEquals(TypeSpecifier.INT_ARRAY, root.getTypeSpecifier());
+        assertEquals("x", root.getName());
+        assertEquals(14, root.getSize());
+        
+    }
+    
+    @Test
+    public void testParseFunctionDeclaration() {
+        Node root = new Parser().parseDeclaration(new Scanner().scan(wrap("int foo( void ) {return 0;}")));
+        
+        assertEquals(NodeKind.DeclarationNode, root.getNodeKind());
+        assertEquals(DeclarationKind.FUNCTION, root.getDeclarationKind());
+        assertEquals(TypeSpecifier.INT, root.getTypeSpecifier());
+        assertEquals("foo", root.getName());
+        
+        Node params = root.getChild(0);
+        Node body = root.getChild(1);
+        
+        assertEquals(DeclarationKind.PARAMS, params.getDeclarationKind());
+        assertEquals(TypeSpecifier.VOID, params.getTypeSpecifier());
+        
+        
+        assertEquals(StatementKind.COMPOUND, body.getStatementKind());
+        
+        root = new Parser().parseDeclaration(new Scanner().scan(wrap("int foo( int x, int y[] ) {return 0;}")));
+        params = root.getChild(0);
+        assertEquals(DeclarationKind.PARAMS, params.getDeclarationKind());
+        assertEquals(TypeSpecifier.INT, params.getTypeSpecifier());
+        assertEquals("x", params.getName());
+        
+        params = params.getNext();
+        assertEquals(DeclarationKind.PARAMS, params.getDeclarationKind());
+        assertEquals(TypeSpecifier.INT_ARRAY, params.getTypeSpecifier());
+        assertEquals("y", params.getName());
+        assertNull(params.getNext());
+        
+        
+    }
+    
+    
+    @Test
+    public void parseProgram() throws IOException {
+        String program = IOUtils.toString(Test_02_Parser.class.getClassLoader().getResourceAsStream("sample.cm"));
+        List<Token> tokens = new Scanner().scan(wrap(program));
+        Node node = new Parser().parseProgram(tokens);
+        
+        assertEquals(DeclarationKind.FUNCTION, node.getDeclarationKind());
+        assertEquals("gcd", node.getName());
+        
+        node = node.getNext();
+        assertEquals(DeclarationKind.FUNCTION, node.getDeclarationKind());
+        assertEquals("main", node.getName());
+        
+        System.out.println(node);
+        
+        
+    }
 
 }
