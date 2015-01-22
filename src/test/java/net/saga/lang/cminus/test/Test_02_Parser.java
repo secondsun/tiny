@@ -789,10 +789,47 @@ public class Test_02_Parser {
         node = node.getNext();
         assertEquals(DeclarationKind.FUNCTION, node.getDeclarationKind());
         assertEquals("main", node.getName());
-        
+        assertEquals(TypeSpecifier.VOID, node.getTypeSpecifier());
+        assertEquals(TypeSpecifier.VOID, node.getChild(0).getTypeSpecifier());
         System.out.println(node);
-        
         
     }
 
+    @Test
+    public void parseProgram2() throws IOException {
+        String program = IOUtils.toString(Test_02_Parser.class.getClassLoader().getResourceAsStream("select.cm"));
+        List<Token> tokens = new Scanner().scan(wrap(program));
+        Node node = new Parser().parseProgram(tokens);
+        
+        System.out.println(node);
+        
+        assertEquals(DeclarationKind.VARIABLE, node.getDeclarationKind());
+        assertEquals("x", node.getName());
+        assertEquals(TypeSpecifier.INT_ARRAY, node.getTypeSpecifier());
+        assertEquals(10, node.getSize());
+        
+        
+        node = node.getNext();
+        assertEquals(DeclarationKind.FUNCTION, node.getDeclarationKind());
+        assertEquals("minloc", node.getName());
+        
+        Node params = node.getChild(0);
+        
+        assertEquals("a", params.getName());
+        assertEquals(TypeSpecifier.INT_ARRAY, params.getTypeSpecifier());
+        
+        params = params.getNext();
+        
+        assertEquals("low", params.getName());
+        assertEquals(TypeSpecifier.INT, params.getTypeSpecifier());
+        
+        params = params.getNext();
+        
+        assertEquals("high", params.getName());
+        assertEquals(TypeSpecifier.INT, params.getTypeSpecifier());
+        
+        
+        
+    }
+    
 }
