@@ -828,8 +828,6 @@ public class Test_02_Parser {
         assertEquals("high", params.getName());
         assertEquals(TypeSpecifier.INT, params.getTypeSpecifier());
         
-        
-        
     }
     
 }
