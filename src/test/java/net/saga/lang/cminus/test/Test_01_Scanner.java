@@ -15,15 +15,11 @@
  */
 package net.saga.lang.cminus.test;
 
-import java.io.IOException;
 import static java.nio.CharBuffer.wrap;
 import java.util.List;
 import net.saga.lang.cminus.scanner.Scanner;
 import net.saga.lang.cminus.scanner.Token;
 import net.saga.lang.cminus.scanner.TokenType;
-import static net.saga.lang.cminus.scanner.TokenType.ASSIGN;
-
-import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import static org.junit.Assert.*;
 

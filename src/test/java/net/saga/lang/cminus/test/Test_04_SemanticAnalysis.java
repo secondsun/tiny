@@ -1,75 +1,47 @@
-/**
- * Copyright (C) 2015 Summers Pittman (secondsun@gmail.com)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package net.saga.lang.tiny.test;
+package net.saga.lang.cminus.test;
 
 import java.io.IOException;
 import static java.nio.CharBuffer.wrap;
 import java.util.List;
-import net.saga.lang.tiny.analyize.Analyizer;
-import net.saga.lang.tiny.analyize.SemanticException;
-import net.saga.lang.tiny.parser.Node;
-import net.saga.lang.tiny.parser.Parser;
-import net.saga.lang.tiny.scanner.Scanner;
-import net.saga.lang.tiny.scanner.Token;
-import net.saga.lang.tiny.analyize.SymbolTable;
-import static net.saga.lang.tiny.parser.NodeType.BOOLEAN;
-import static net.saga.lang.tiny.parser.NodeType.INTEGER;
-import org.apache.commons.io.IOUtils;
+import net.saga.lang.cminus.analyize.Analyizer;
+import net.saga.lang.cminus.analyize.SemanticException;
+import net.saga.lang.cminus.parser.Node;
+import static net.saga.lang.cminus.parser.NodeType.BOOLEAN;
+import static net.saga.lang.cminus.parser.NodeType.INTEGER;
+import net.saga.lang.cminus.parser.Parser;
+import net.saga.lang.cminus.scanner.Scanner;
+import net.saga.lang.cminus.scanner.Token;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 
-/**
- * TINY is a very simple language.
- *
- * There is only one Scope. There are no functions, object or methods. Variables
- * are declared by use. There are only Integer and Boolean types Boolean Types
- * can only come from Boolean Expressions Variables can only have Integer values
- * A boolean value cannot be output using a write statement
- *
- * @author summers
- */
 public class Test_04_SemanticAnalysis {
-
-    @Test
-    public void populateSimpleTable() {
-        String program = "write x;";
-        List<Token> tokens = new Scanner().scan(wrap(program));
-        Node parseTree = new Parser().parseProgram(tokens);
-        SymbolTable table = Analyizer.buildSymbolTable(parseTree);
-
-        assertEquals(1, table.size());
-        assertEquals(1, table.get("x").size());
-        assertEquals((Integer) 1, table.get("x").get(0).lineNumber);
-        assertEquals((Integer) 0, table.get("x").get(0).memoryLocation);
-    }
-
-    @Test
-    public void populateSymbolTable() throws IOException {
-        String program = IOUtils.toString(Test_04_SemanticAnalysis.class.getClassLoader().getResourceAsStream("sample.tny"));
-        List<Token> tokens = new Scanner().scan(wrap(program));
-        Node parseTree = new Parser().parseProgram(tokens);
-        SymbolTable table = Analyizer.buildSymbolTable(parseTree);
-
-        assertEquals(2, table.size());
-        assertEquals(6, table.get("x").size());
-        assertEquals(4, table.get("fact").size());
-        assertEquals(4, table.get("fact").size());
-
-    }
+//    @Test
+//    public void populateSimpleTable() {
+//        String program = "write x;";
+//        List<Token> tokens = new Scanner().scan(wrap(program));
+//        Node parseTree = new Parser().parseProgram(tokens);
+//        SymbolTable table = Analyizer.buildSymbolTable(parseTree);
+//
+//        assertEquals(1, table.size());
+//        assertEquals(1, table.get("x").size());
+//        assertEquals((Integer) 1, table.get("x").get(0).lineNumber);
+//        assertEquals((Integer) 0, table.get("x").get(0).memoryLocation);
+//    }
+//
+//    @Test
+//    public void populateSymbolTable() throws IOException {
+//        String program = IOUtils.toString(net.saga.lang.tiny.test.Test_04_SemanticAnalysis.class.getClassLoader().getResourceAsStream("sample.tny"));
+//        List<Token> tokens = new Scanner().scan(wrap(program));
+//        Node parseTree = new Parser().parseProgram(tokens);
+//        SymbolTable table = Analyizer.buildSymbolTable(parseTree);
+//
+//        assertEquals(2, table.size());
+//        assertEquals(6, table.get("x").size());
+//        assertEquals(4, table.get("fact").size());
+//        assertEquals(4, table.get("fact").size());
+//
+//    }
 
     @Test
     public void testIntegerTypeAddition() {
@@ -110,10 +82,34 @@ public class Test_04_SemanticAnalysis {
         Analyizer.typeCheck(parseTree);
         assertEquals(BOOLEAN, parseTree.getNodeType());
     }
+    
+    @Test
+    public void testBooleanTypeGreaterThanEqual() {
+        List<Token> tokens = new Scanner().scan(wrap("4 >= 2"));
+        Node parseTree = new Parser().parseExpression(tokens);
+        Analyizer.typeCheck(parseTree);
+        assertEquals(BOOLEAN, parseTree.getNodeType());
+    }
+    
+    @Test
+    public void testBooleanTypeGreaterThan() {
+        List<Token> tokens = new Scanner().scan(wrap("4 > 2"));
+        Node parseTree = new Parser().parseExpression(tokens);
+        Analyizer.typeCheck(parseTree);
+        assertEquals(BOOLEAN, parseTree.getNodeType());
+    }
+    
+    @Test
+    public void testBooleanTypeLessThanEqual() {
+        List<Token> tokens = new Scanner().scan(wrap("4 <= 2"));
+        Node parseTree = new Parser().parseExpression(tokens);
+        Analyizer.typeCheck(parseTree);
+        assertEquals(BOOLEAN, parseTree.getNodeType());
+    }
 
     @Test
     public void testBooleanTypeEquals() {
-        List<Token> tokens = new Scanner().scan(wrap("4 = 2"));
+        List<Token> tokens = new Scanner().scan(wrap("4 == 2"));
         Node parseTree = new Parser().parseExpression(tokens);
         Analyizer.typeCheck(parseTree);
         assertEquals(BOOLEAN, parseTree.getNodeType());
@@ -129,32 +125,26 @@ public class Test_04_SemanticAnalysis {
 
     @Test
     public void testIfTestIsBoolean() {
-        List<Token> tokens = new Scanner().scan(wrap("if 0 < x then x := 1 end\n"));
+        List<Token> tokens = new Scanner().scan(wrap("if (0 < x) { x = 1; }\n"));
         Node parseTree = new Parser().parseStatement(tokens);
         Analyizer.typeCheck(parseTree);
         assertEquals(BOOLEAN, parseTree.getChild(0).getNodeType());
     }
 
     @Test
-    public void testUntilTestIsBoolean() {
-        List<Token> tokens = new Scanner().scan(wrap("repeat x := 1 until 0 < x \n"));
-        Node parseTree = new Parser().parseStatement(tokens);
-        Analyizer.typeCheck(parseTree);
-        assertEquals(BOOLEAN, parseTree.getChild(1).getNodeType());
+    public void testWhileTestIsBoolean() {
+        fail();
     }
 
     
     @Test
     public void testAnalyzeProgram() throws IOException {
-        String program = IOUtils.toString(Test_04_SemanticAnalysis.class.getClassLoader().getResourceAsStream("sample.tny"));
-        List<Token> tokens = new Scanner().scan(wrap(program));
-        Node parseTree = new Parser().parseProgram(tokens);
-        Analyizer.typeCheck(parseTree);
+       fail();
     }
 
     @Test(expected = SemanticException.class)
     public void failOnBadIf() {
-        List<Token> tokens = new Scanner().scan(wrap("if 0 + x then x := 1 end\n"));
+        List<Token> tokens = new Scanner().scan(wrap("if (0 + x) { x = 1; }\n"));
         Node parseTree = new Parser().parseStatement(tokens);
         Analyizer.typeCheck(parseTree);
         fail();
@@ -183,6 +173,4 @@ public class Test_04_SemanticAnalysis {
         Analyizer.typeCheck(parseTree);
         fail();
     }
-    
-    
 }
