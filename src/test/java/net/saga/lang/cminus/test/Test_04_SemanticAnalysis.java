@@ -133,9 +133,17 @@ public class Test_04_SemanticAnalysis {
 
     @Test
     public void testWhileTestIsBoolean() {
-        fail();
+        List<Token> tokens = new Scanner().scan(wrap("while (0 < x) { x = 1; }\n"));
+        Node parseTree = new Parser().parseStatement(tokens);
+        Analyizer.typeCheck(parseTree);
+        assertEquals(BOOLEAN, parseTree.getChild(0).getNodeType());
     }
 
+    
+    @Test
+    public void testAnalyzeFunction() throws IOException {
+       fail();
+    }
     
     @Test
     public void testAnalyzeProgram() throws IOException {
@@ -151,8 +159,8 @@ public class Test_04_SemanticAnalysis {
     }
 
     @Test(expected = SemanticException.class)
-    public void failOnBadUntil() {
-        List<Token> tokens = new Scanner().scan(wrap("repeat x := 1 until 0 + x \n"));
+    public void failOnBadWhile() {
+        List<Token> tokens = new Scanner().scan(wrap("while(x + 1) {1+1;}\n"));
         Node parseTree = new Parser().parseStatement(tokens);
         Analyizer.typeCheck(parseTree);
         fail();
@@ -160,17 +168,26 @@ public class Test_04_SemanticAnalysis {
 
     @Test(expected = SemanticException.class)
     public void failOnBadInteger() {
-        List<Token> tokens = new Scanner().scan(wrap("1 + (4 < 5)\n"));
+        List<Token> tokens = new Scanner().scan(wrap("1 + (4 < 5);\n"));
         Node parseTree = new Parser().parseExpression(tokens);
         Analyizer.typeCheck(parseTree);
         fail();
     }
     
+    
+    @Test(expected = SemanticException.class)
+    public void arrayStuffs() {
+        //definitions
+        //assignment
+        //a[5 < 3] should fail
+        //a[5]; a[6] = 4 should fail?
+        fail();
+    }
+    
     @Test(expected = SemanticException.class)
     public void onlyAssignInteger() {
-        List<Token> tokens = new Scanner().scan(wrap("x := (4 < 5)\n"));
+        List<Token> tokens = new Scanner().scan(wrap("x = (4 < 5);\n"));
         Node parseTree = new Parser().parseStatement(tokens);
         Analyizer.typeCheck(parseTree);
-        fail();
     }
 }

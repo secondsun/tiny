@@ -69,22 +69,13 @@ public class Analyizer {
                         case StatementNode:
                             switch (node.getStatementKind()) {
                                 case IF:
+                                case WHILE:
                                     if (child1.getNodeType() != BOOLEAN) {
                                         throw new SemanticException("If test is not boolean" + child1.toString());
                                     }
                                     break;
-                                case REPEAT:
-                                    if (child2.getNodeType() != BOOLEAN) {
-                                        throw new SemanticException("Until test is not boolean" + child1.toString());
-                                    }
-                                    break;
-                                case WRITE:
-                                    if (child1.getNodeType() != INTEGER) {
-                                        throw new SemanticException("Child is not integers" + child1.toString());
-                                    }
-                                    break;
-                                case READ:
-                                    break;//variable is assumed to be integer
+                                case COMPOUND:
+                                    break;//??
                                 default:
                                     throw new AssertionError(node.getStatementKind().name());
 
