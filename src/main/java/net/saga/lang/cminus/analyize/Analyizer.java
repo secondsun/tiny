@@ -113,9 +113,13 @@ public class Analyizer {
                                             throw new SemanticException("Whoopse@" + node.toString());
                                     }
                                     break;
+                                    case AssignmentExpression: 
+                                        if (child2.getNodeType() != INTEGER) {
+                                            throw new SemanticException("Only interger assignment is supported");
+                                        }
                                 case ConstantExpression:
                                 case IdentifierExpression:
-                                case AssignmentExpression: 
+                                
                                     node.setNodeType(NodeType.INTEGER);
                                     break;
                                 default:

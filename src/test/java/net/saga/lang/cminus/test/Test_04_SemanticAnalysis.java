@@ -141,7 +141,12 @@ public class Test_04_SemanticAnalysis {
 
     
     @Test
-    public void testAnalyzeFunction() throws IOException {
+    public void testAnalyzeIntFunction() throws IOException {
+       fail();
+    }
+    
+    @Test
+    public void testAnalyzeVoidFunction() throws IOException {
        fail();
     }
     
