@@ -556,6 +556,10 @@ public class Test_02_Parser {
 
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void parseBadCompoundStatement() {
+        new Parser().parseStatement(new Scanner().scan(wrap("{int x; int y; 42;18;33;int z[10];}")));//declarations after statment shoudl fail        
+    }
 
     /**
      * Now we can incorporate statements. Let's begin with IF.

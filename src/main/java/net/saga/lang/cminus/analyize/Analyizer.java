@@ -16,10 +16,12 @@
 package net.saga.lang.cminus.analyize;
 
 import java.util.function.Function;
+import net.saga.lang.cminus.parser.DeclarationKind;
 import net.saga.lang.cminus.parser.Node;
 import net.saga.lang.cminus.parser.NodeType;
 import static net.saga.lang.cminus.parser.NodeType.BOOLEAN;
 import static net.saga.lang.cminus.parser.NodeType.INTEGER;
+import net.saga.lang.cminus.parser.TypeSpecifier;
 
 public class Analyizer {
 
@@ -119,11 +121,15 @@ public class Analyizer {
                                         }
                                 case ConstantExpression:
                                 case IdentifierExpression:
-                                
                                     node.setNodeType(NodeType.INTEGER);
                                     break;
                                 default:
                                     throw new AssertionError(node.getExpressionKind().name());
+                            }
+                            break;
+                        case DeclarationNode:
+                            if (node.getDeclarationKind().equals(DeclarationKind.VARIABLE)) {
+                                //??
                             }
                             break;
                         default:

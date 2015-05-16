@@ -6,11 +6,13 @@ import java.util.List;
 import net.saga.lang.cminus.analyize.Analyizer;
 import net.saga.lang.cminus.analyize.SemanticException;
 import net.saga.lang.cminus.parser.Node;
+import net.saga.lang.cminus.parser.NodeType;
 import static net.saga.lang.cminus.parser.NodeType.BOOLEAN;
 import static net.saga.lang.cminus.parser.NodeType.INTEGER;
 import net.saga.lang.cminus.parser.Parser;
 import net.saga.lang.cminus.scanner.Scanner;
 import net.saga.lang.cminus.scanner.Token;
+import org.apache.commons.io.IOUtils;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import org.junit.Test;
@@ -82,7 +84,7 @@ public class Test_04_SemanticAnalysis {
         Analyizer.typeCheck(parseTree);
         assertEquals(BOOLEAN, parseTree.getNodeType());
     }
-    
+
     @Test
     public void testBooleanTypeGreaterThanEqual() {
         List<Token> tokens = new Scanner().scan(wrap("4 >= 2"));
@@ -90,7 +92,7 @@ public class Test_04_SemanticAnalysis {
         Analyizer.typeCheck(parseTree);
         assertEquals(BOOLEAN, parseTree.getNodeType());
     }
-    
+
     @Test
     public void testBooleanTypeGreaterThan() {
         List<Token> tokens = new Scanner().scan(wrap("4 > 2"));
@@ -98,7 +100,7 @@ public class Test_04_SemanticAnalysis {
         Analyizer.typeCheck(parseTree);
         assertEquals(BOOLEAN, parseTree.getNodeType());
     }
-    
+
     @Test
     public void testBooleanTypeLessThanEqual() {
         List<Token> tokens = new Scanner().scan(wrap("4 <= 2"));
@@ -139,20 +141,22 @@ public class Test_04_SemanticAnalysis {
         assertEquals(BOOLEAN, parseTree.getChild(0).getNodeType());
     }
 
-    
     @Test
-    public void testAnalyzeIntFunction() throws IOException {
-       fail();
+    public void testAnalyzeMainFunction() throws IOException {
+        List<Token> tokens = new Scanner().scan(wrap("void main(void){int x; int y; \n"
+                + "  x = 4;y = x;\n"
+                + "}"));
+        Node parseTree = new Parser().parseDeclaration(tokens);
+        Analyizer.typeCheck(parseTree);
+        assertEquals(NodeType.VOID, parseTree.getChild(0).getNodeType());
     }
-    
-    @Test
-    public void testAnalyzeVoidFunction() throws IOException {
-       fail();
-    }
-    
+
     @Test
     public void testAnalyzeProgram() throws IOException {
-       fail();
+        String program = IOUtils.toString(Test_02_Parser.class.getClassLoader().getResourceAsStream("sample.cm"));
+        List<Token> tokens = new Scanner().scan(wrap(program));
+        Node node = new Parser().parseProgram(tokens);
+        Analyizer.typeCheck(node);
     }
 
     @Test(expected = SemanticException.class)
@@ -178,17 +182,26 @@ public class Test_04_SemanticAnalysis {
         Analyizer.typeCheck(parseTree);
         fail();
     }
-    
-    
-    @Test(expected = SemanticException.class)
-    public void arrayStuffs() {
-        //definitions
-        //assignment
-        //a[5 < 3] should fail
-        //a[5]; a[6] = 4 should fail?
-        fail();
+
+    @Test
+    public void testCompoundStatement() {
+        List<Token> tokens = new Scanner().scan(wrap("{int x; int y; \n"
+                + "  x = 4;y = x;\n"
+                + "}"));
+        Node parseTree = new Parser().parseStatement(tokens);
+        Analyizer.typeCheck(parseTree);
+
     }
-    
+//
+//    @Test(expected = SemanticException.class)
+//    public void arrayStuffs() {
+//        //definitions
+//        //assignment
+//        //a[5 < 3] should fail
+//        //a[5]; a[6] = 4 should fail?
+//        fail();
+//    }
+
     @Test(expected = SemanticException.class)
     public void onlyAssignInteger() {
         List<Token> tokens = new Scanner().scan(wrap("x = (4 < 5);\n"));
