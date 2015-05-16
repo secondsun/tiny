@@ -5,6 +5,7 @@ import static java.nio.CharBuffer.wrap;
 import java.util.List;
 import net.saga.lang.cminus.analyize.Analyizer;
 import net.saga.lang.cminus.analyize.SemanticException;
+import net.saga.lang.cminus.analyize.SymbolTable;
 import net.saga.lang.cminus.parser.Node;
 import net.saga.lang.cminus.parser.NodeType;
 import static net.saga.lang.cminus.parser.NodeType.BOOLEAN;
@@ -18,18 +19,18 @@ import static org.junit.Assert.fail;
 import org.junit.Test;
 
 public class Test_04_SemanticAnalysis {
-//    @Test
-//    public void populateSimpleTable() {
-//        String program = "write x;";
-//        List<Token> tokens = new Scanner().scan(wrap(program));
-//        Node parseTree = new Parser().parseProgram(tokens);
-//        SymbolTable table = Analyizer.buildSymbolTable(parseTree);
-//
-//        assertEquals(1, table.size());
-//        assertEquals(1, table.get("x").size());
-//        assertEquals((Integer) 1, table.get("x").get(0).lineNumber);
-//        assertEquals((Integer) 0, table.get("x").get(0).memoryLocation);
-//    }
+    @Test
+    public void populateSimpleTable() {
+        String program = "int x;";
+        List<Token> tokens = new Scanner().scan(wrap(program));
+        Node parseTree = new Parser().parseProgram(tokens);
+        SymbolTable table = Analyizer.buildSymbolTable(parseTree);
+
+        assertEquals(1, table.size());
+        assertEquals(1, table.get("x").size());
+        assertEquals((Integer) 1, table.get("x").get(0).lineNumber);
+        assertEquals((Integer) 0, table.get("x").get(0).memoryLocation);
+    }
 //
 //    @Test
 //    public void populateSymbolTable() throws IOException {
@@ -192,15 +193,6 @@ public class Test_04_SemanticAnalysis {
         Analyizer.typeCheck(parseTree);
 
     }
-//
-//    @Test(expected = SemanticException.class)
-//    public void arrayStuffs() {
-//        //definitions
-//        //assignment
-//        //a[5 < 3] should fail
-//        //a[5]; a[6] = 4 should fail?
-//        fail();
-//    }
 
     @Test(expected = SemanticException.class)
     public void onlyAssignInteger() {

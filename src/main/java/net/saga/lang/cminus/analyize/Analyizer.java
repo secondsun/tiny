@@ -77,6 +77,13 @@ public class Analyizer {
                                     }
                                     break;
                                 case COMPOUND:
+                                    break;
+                                case RETURN:
+                                    if (node.getChild(0) != null) {
+                                        if (child1.getNodeType() != INTEGER) {
+                                            throw new SemanticException("return type not int.  " + child1.toString());
+                                        }
+                                    }
                                     break;//??
                                 default:
                                     throw new AssertionError(node.getStatementKind().name());
@@ -119,6 +126,9 @@ public class Analyizer {
                                         if (child2.getNodeType() != INTEGER) {
                                             throw new SemanticException("Only interger assignment is supported");
                                         }
+                                case CallExpression:
+                                    
+                                    break;
                                 case ConstantExpression:
                                 case IdentifierExpression:
                                     node.setNodeType(NodeType.INTEGER);
