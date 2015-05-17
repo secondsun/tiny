@@ -41,7 +41,11 @@ public class Parser {
 
     public Token nextToken() {
         if (tokensIter.hasNext()) {
-            return token = tokensIter.next();
+            token = tokensIter.next();
+            while (token.getType() == TokenType.COMMENT) {
+                token = tokensIter.next();
+            }
+            return token;
         } else {
             return token = null;
         }
