@@ -1,21 +1,22 @@
 /**
  * Copyright (C) 2015 Summers Pittman (secondsun@gmail.com)
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package net.saga.lang.tiny.test;
 
 import java.io.IOException;
+import java.nio.CharBuffer;
 import static java.nio.CharBuffer.wrap;
 import java.util.List;
 import net.saga.lang.tiny.scanner.Scanner;
@@ -156,8 +157,12 @@ public class Test_01_Scanner {
      * First lets make sure next token handles comments and white space
      */
     @Test
-    public void ignoreComments() {
-        Token token = new Scanner().nextToken(wrap("{this is a comment} end"));
+    public void doesNotIgnoreComments() {
+        CharBuffer buffer = wrap("{this is a comment} end");
+        Scanner scanner = new Scanner();
+        Token token = scanner.nextToken(buffer);
+        assertEquals(TokenType.COMMENT, token.getType());
+        token = new Scanner().nextToken(buffer);
         assertEquals(TokenType.END, token.getType());
     }
 
@@ -168,17 +173,16 @@ public class Test_01_Scanner {
     }
 
     /**
-     * Tokens should include line info because that will be used later on
-     * in compilation.
+     * Tokens should include line info because that will be used later on in
+     * compilation.
      */
     @Test
     public void testNewline() {
-        Token token = new Scanner().nextToken(wrap("{this is a comment}\n end"));
+        Token token = new Scanner().nextToken(wrap("\n end"));
         assertEquals(TokenType.END, token.getType());
         assertEquals(2, token.getLineNumber());
     }
 
-    
     /**
      * Now we will test that we can extract multiple tokens in an input.
      */
@@ -214,15 +218,19 @@ public class Test_01_Scanner {
         List<Token> tokens = new Scanner().scan(wrap(program));
         int index = 0;
         //line 5
+        assertEquals(Token.newInstance(TokenType.COMMENT, 4), tokens.get(index++));
         assertEquals(Token.newInstance(READ, 5), tokens.get(index++));
         assertEquals(Token.newInstance("x", 5), tokens.get(index++));
         assertEquals(Token.newInstance(SEMICOLON, 5), tokens.get(index++));
+        assertEquals(Token.newInstance(TokenType.COMMENT, 5), tokens.get(index++));
         //line 6
+        
         assertEquals(Token.newInstance(IF, 6), tokens.get(index++));
         assertEquals(Token.newInstance(0, 6), tokens.get(index++));
         assertEquals(Token.newInstance(LT, 6), tokens.get(index++));
         assertEquals(Token.newInstance("x", 6), tokens.get(index++));
         assertEquals(Token.newInstance(THEN, 6), tokens.get(index++));
+        assertEquals(Token.newInstance(TokenType.COMMENT, 6), tokens.get(index++));
         //line 7
         assertEquals(Token.newInstance("fact", 7), tokens.get(index++));
         assertEquals(Token.newInstance(ASSIGNMENT, 7), tokens.get(index++));
@@ -252,9 +260,10 @@ public class Test_01_Scanner {
         //line 12
         assertEquals(Token.newInstance(WRITE, 12), tokens.get(index++));
         assertEquals(Token.newInstance("fact", 12), tokens.get(index++));
+        assertEquals(Token.newInstance(TokenType.COMMENT, 12), tokens.get(index++));
         //line 13
         assertEquals(Token.newInstance(END, 13), tokens.get(index++));
-        
+
     }
 
 }

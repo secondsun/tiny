@@ -1,17 +1,17 @@
 /**
  * Copyright (C) 2015 Summers Pittman (secondsun@gmail.com)
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package net.saga.lang.tiny.scanner;
 
@@ -22,31 +22,31 @@ import java.util.List;
 public class Scanner {
 
     private int lineNumber = 1;
-    
+
     /**
      * Given the a input buffer, find the next token.
-     * 
+     *
      * Then buffer will be left at the first token after a token is found
-     * 
+     *
      * @param buffer a charbuffer
      * @return a token
      */
     public Token nextToken(CharBuffer buffer) {
-        
+
         String token = getNextTokenString(buffer);
-        
+
         if (token.isEmpty()) {
             return null;
         }
-        
+
         TokenType type = TokenType.fromString(token);
-        
+
         switch (type) {
             case IF:
             case THEN:
             case ELSE:
             case END:
-            case REPEAT:    
+            case REPEAT:
             case UNTIL:
             case READ:
             case WRITE:
@@ -59,6 +59,7 @@ public class Scanner {
             case START_PAREN:
             case END_PAREN:
             case SEMICOLON:
+            case COMMENT:
             case ASSIGNMENT:
                 return Token.newInstance(type, lineNumber);
             case NUMBER:
@@ -67,7 +68,7 @@ public class Scanner {
                 return Token.newInstance(token, lineNumber);
             default:
                 throw new AssertionError(type.name());
-               
+
         }
 
     }
@@ -89,18 +90,18 @@ public class Scanner {
         }
         buffer.mark();
         char character = buffer.get();
-        
+
         if (character == '{') {
-            handleComment(buffer);
+            return handleComment(buffer);
         } else if (Character.isWhitespace(character)) {
             if (character == '\n') {
                 lineNumber++;
             }
             handleWhiteSpace(buffer);
-        } else if (Character.isDigit(character)){
+        } else if (Character.isDigit(character)) {
             tokenBuilder.append(character);
             handleDigit(tokenBuilder, buffer);
-        } else if (Character.isAlphabetic(character)){
+        } else if (Character.isAlphabetic(character)) {
             tokenBuilder.append(character);
             handleIdentifier(tokenBuilder, buffer);
         } else {
@@ -116,26 +117,35 @@ public class Scanner {
             //This will happen with the end of a comment or whitespace
             return getNextTokenString(buffer);
         }
-        
+
         return tokenBuilder.toString();
-        
+
     }
 
-    private void handleComment(CharBuffer buffer) {
+    private String handleComment(CharBuffer buffer) {
         if (!buffer.hasRemaining()) {
             throw new IllegalStateException("Unexpected end of file");
         }
         buffer.mark();
+        StringBuffer commentBuffer = new StringBuffer("{");
         char character = buffer.get();
-        if (character == '{') {
-            throw new IllegalStateException("Nested comments");
-        } else if (character != '}') {
-            if (character == '\n') {
-                lineNumber++;
+        while (character != '}') {
+            if (!buffer.hasRemaining()) {
+                throw new IllegalStateException("Unexpected end of file");
             }
-            handleComment(buffer);
+            if (character == '{') {
+                throw new IllegalStateException("Nested comments");
+            } else if (character != '}') {
+                if (character == '\n') {
+                    lineNumber++;
+                }
+                commentBuffer.append(character);
+                character = buffer.get();
+            }
         }
-        
+        commentBuffer.append(character);
+        return commentBuffer.toString();
+
     }
 
     private void handleWhiteSpace(CharBuffer buffer) {
@@ -182,6 +192,4 @@ public class Scanner {
         }
     }
 
-
-    
 }
