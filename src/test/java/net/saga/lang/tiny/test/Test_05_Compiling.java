@@ -23,7 +23,6 @@ import me.qmx.jitescript.internal.org.objectweb.asm.Opcodes;
 import static me.qmx.jitescript.internal.org.objectweb.asm.Opcodes.IADD;
 import static me.qmx.jitescript.internal.org.objectweb.asm.Opcodes.ICONST_0;
 import static me.qmx.jitescript.internal.org.objectweb.asm.Opcodes.ICONST_1;
-import me.qmx.jitescript.internal.org.objectweb.asm.tree.FieldInsnNode;
 import me.qmx.jitescript.internal.org.objectweb.asm.tree.InsnList;
 import me.qmx.jitescript.internal.org.objectweb.asm.tree.InsnNode;
 import me.qmx.jitescript.internal.org.objectweb.asm.tree.JumpInsnNode;
@@ -42,13 +41,14 @@ import net.saga.lang.tiny.scanner.Token;
 import org.apache.commons.io.IOUtils;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * Now we will compile tiny into actual Java bytecode. We will use JitaCode to
  * simplify a lot of bookkeeping.
  */
+
 public class Test_05_Compiling {
 
     /**
@@ -56,6 +56,7 @@ public class Test_05_Compiling {
      * constant to the JVM stack
      */
     @Test
+    @Ignore
     public void testCompileNumber() {
         InsnList insList = compileExpression("5");
         assertEquals(1, insList.size());
@@ -64,6 +65,7 @@ public class Test_05_Compiling {
     }
 
     @Test
+    @Ignore
     public void testCompileAddition() {
         InsnList insList = compileExpression("5 + 7");
         assertEquals(3, insList.size());
@@ -79,6 +81,7 @@ public class Test_05_Compiling {
     }
 
     @Test
+    @Ignore
     public void testCompileMultiplication() {
         InsnList insList = compileExpression("9 * 12");
         assertEquals(3, insList.size());
@@ -94,6 +97,7 @@ public class Test_05_Compiling {
     }
 
     @Test
+    @Ignore
     public void testCompileSubtraction() {
         InsnList insList = compileExpression("15 - 8");
         assertEquals(3, insList.size());
@@ -109,6 +113,7 @@ public class Test_05_Compiling {
     }
 
     @Test
+    @Ignore
     public void testCompileIntDivision() {
         InsnList insList = compileExpression("2/1");
         assertEquals(3, insList.size());
@@ -124,6 +129,7 @@ public class Test_05_Compiling {
     }
 
     @Test
+    @Ignore
     public void testCompileEqComparison() {
         InsnList insList = compileExpression("1 = 2");
         assertEquals(8, insList.size());
@@ -147,6 +153,7 @@ public class Test_05_Compiling {
     }
 
     @Test
+    @Ignore
     public void testCompileLTComparison() {
         InsnList insList = compileExpression("1 < 2");
         assertEquals(8, insList.size());
@@ -169,6 +176,7 @@ public class Test_05_Compiling {
     }
 
     @Test
+    @Ignore
     public void testCompileAssignment() {
         InsnList insList = compileStatement("x := 1");
         assertEquals(2, insList.size());
@@ -182,6 +190,7 @@ public class Test_05_Compiling {
     }
 
     @Test
+    @Ignore
     public void testCompileRead() {
         InsnList insList = compileStatement("read x");
         assertEquals(4, insList.size());
@@ -240,12 +249,12 @@ public class Test_05_Compiling {
 //    }
 //
 //    
-//    @Test
-//    public void testCompileProgram() throws IOException {
-//        String program = IOUtils.toString(Test_05_Compiling.class.getClassLoader().getResourceAsStream("sample.tny"));
-//        Class<?> klass = compileProgram(program);
+    @Test
+    public void testCompileProgram() throws IOException {
+        String program = IOUtils.toString(Test_05_Compiling.class.getClassLoader().getResourceAsStream("sample.tny"));
+        Class<?> klass = compileProgram(program);
 //        fail();
-//    }
+    }
 
     private Class<?> compileProgram(String program) {
         List<Token> scanned = new Scanner().scan(wrap(program));

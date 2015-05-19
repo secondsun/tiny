@@ -23,6 +23,7 @@ import me.qmx.jitescript.CodeBlock;
 import static me.qmx.jitescript.CodeBlock.newCodeBlock;
 import me.qmx.jitescript.JiteClass;
 import me.qmx.jitescript.internal.org.objectweb.asm.Opcodes;
+import me.qmx.jitescript.internal.org.objectweb.asm.tree.LabelNode;
 import me.qmx.jitescript.util.CodegenUtils;
 import static me.qmx.jitescript.util.CodegenUtils.p;
 import static me.qmx.jitescript.util.CodegenUtils.sig;
@@ -39,7 +40,8 @@ public class CompilerContext {
     private final Set<String> methods = new HashSet<>();
     private CompilerContext parentContext = null;
     private CodeBlock currentBlock = newCodeBlock();
-
+    private Set<Integer> lines = new HashSet<>();
+    LabelNode endLabel = new LabelNode();
     public CompilerContext() {
         this("anonymous");
     }
@@ -133,12 +135,22 @@ public class CompilerContext {
         if (methods.contains(methodName)) {
             throw new RuntimeException(methodName + " already defined");
         }
-        jiteClass.defineMethod(methodName, Opcodes.ACC_PUBLIC, CodegenUtils.sig(Object.class), currentBlock);
+        jiteClass.defineMethod(methodName, Opcodes.ACC_PUBLIC, CodegenUtils.sig(void.class, String[].class), currentBlock);
         methods.add(methodName);
         currentBlock = newCodeBlock();
         return this;
     }
 
+    public CompilerContext blockToMain() {
+        if (methods.contains("main")) {
+            throw new RuntimeException("main" + " already defined");
+        }
+        jiteClass.defineMethod("main", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, CodegenUtils.sig(void.class, String[].class), currentBlock);
+        methods.add("main");
+        currentBlock = newCodeBlock();
+        return this;
+    }
+    
     public CodeBlock currentBlock() {
         return this.currentBlock;
     }
@@ -162,6 +174,14 @@ public class CompilerContext {
 
     public String getClassSig() {
         return "L" + getClassName() + ";";
+    }
+    
+    public boolean shouldMarkLine(int line) {
+        return !lines.contains(line);
+    }
+
+    void markLine(int lineNumber) {
+        lines.add(lineNumber);
     }
     
 }

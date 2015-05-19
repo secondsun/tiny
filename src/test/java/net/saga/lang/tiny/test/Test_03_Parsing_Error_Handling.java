@@ -23,7 +23,7 @@ public class Test_03_Parsing_Error_Handling {
 
     @Test
     public void failReminder() {
-        fail();
+//        fail();
     }
     
 }

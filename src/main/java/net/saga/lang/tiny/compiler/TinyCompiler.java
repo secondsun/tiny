@@ -29,12 +29,17 @@ public class TinyCompiler {
 
     public static CompilerContext compileStatement(Node statementNode, CompilerContext compilerContext, SymbolTable symbols) {
         CodeBlock block = compilerContext.currentBlock();
-
-        switch(statementNode.getStatementKind()){
+        if (compilerContext.shouldMarkLine(statementNode.getLineNumber())) {
+            LabelNode instructionLabel = new LabelNode();
+            block.label(instructionLabel);
+            block.line(statementNode.getLineNumber(), instructionLabel);
+            compilerContext.markLine(statementNode.getLineNumber());
+        }
+        switch (statementNode.getStatementKind()) {
             case IF:
                 LabelNode elseLabel = new LabelNode();
                 LabelNode afterElseLabel = new LabelNode();
-                
+
                 compileExpression(statementNode.getChild(0), compilerContext, symbols);
                 block.iconst_1();
                 block.if_icmpne(elseLabel);
@@ -45,7 +50,7 @@ public class TinyCompiler {
                     compileStatement(statementNode.getChild(2), compilerContext, symbols);
                 }
                 block.label(afterElseLabel);
-                
+
                 break;
             case REPEAT:
                 LabelNode startRepeat = new LabelNode();
@@ -60,12 +65,22 @@ public class TinyCompiler {
                 break;
             case ASSIGN:
                 compileExpression(statementNode.getChild(0), compilerContext, symbols);
+                if (statementNode.getLineNumber() == symbols.get(statementNode.getName()).get(0).lineNumber) {
+                    LabelNode varLabel = new LabelNode();
+                    compilerContext.currentBlock().label(varLabel);
+                    compilerContext.currentBlock().visitLocalVariable(statementNode.getName(), org.objectweb.asm.Type.getDescriptor(int.class), sig(int.class), varLabel, compilerContext.endLabel, symbols.getAddress(statementNode.getName()));
+                }
                 block.istore(symbols.getAddress(statementNode.getName()));
                 break;
             case READ:
                 block.invokestatic(p(System.class), "console", sig(Console.class));
                 block.invokevirtual(p(Console.class), "readLine", sig(String.class));
                 block.invokestatic(p(Integer.class), "parseInt", sig(int.class, String.class));
+                if (statementNode.getLineNumber() == symbols.get(statementNode.getName()).get(0).lineNumber) {
+                    LabelNode varLabel = new LabelNode();
+                    compilerContext.currentBlock().label(varLabel);
+                    compilerContext.currentBlock().visitLocalVariable(statementNode.getName(), org.objectweb.asm.Type.getDescriptor(int.class), sig(int.class), varLabel, compilerContext.endLabel, symbols.getAddress(statementNode.getName()));
+                }
                 block.istore(symbols.getAddress(statementNode.getName()));
                 break;
             case WRITE:
@@ -76,21 +91,25 @@ public class TinyCompiler {
             default:
                 throw new AssertionError(statementNode.getStatementKind().name());
         }
-        
+
         if (statementNode.getNext() != null) {
             return compileStatement(statementNode.getNext(), compilerContext, symbols);
         }
-        
+
         return compilerContext;
     }
-    
-    
-    public static CompilerContext compileExpression(Node expressionNode, CompilerContext ctx, SymbolTable symbols) {
 
-        
+    public static CompilerContext compileExpression(Node expressionNode, CompilerContext ctx, SymbolTable symbols) {
+        if (ctx.shouldMarkLine(expressionNode.getLineNumber())) {
+            LabelNode instructionLabel = new LabelNode();
+            ctx.currentBlock().label(instructionLabel);
+            ctx.currentBlock().line(expressionNode.getLineNumber(), instructionLabel);
+            ctx.markLine(expressionNode.getLineNumber());
+        }
+
         switch (expressionNode.getExpressionKind()) {
             case OperatorExpression:
-                
+
                 compileExpression(expressionNode.getChild(0), ctx, symbols);
                 compileExpression(expressionNode.getChild(1), ctx, symbols);
                 addOperator(expressionNode, ctx);
@@ -98,21 +117,31 @@ public class TinyCompiler {
             case ConstantExpression:
                 ctx.currentBlock().ldc(expressionNode.getValue());
                 return ctx;
-                
+
             case IdentifierExpression:
+                if (expressionNode.getLineNumber() == symbols.get(expressionNode.getName()).get(0).lineNumber) {
+                    LabelNode varLabel = new LabelNode();
+                    ctx.currentBlock().label(varLabel);
+                    ctx.currentBlock().visitLocalVariable(expressionNode.getName(), org.objectweb.asm.Type.getDescriptor(int.class), sig(int.class), varLabel, ctx.endLabel, symbols.getAddress(expressionNode.getName()));
+                }
                 ctx.currentBlock().iload(symbols.getAddress(expressionNode.getName()));
                 return ctx;
             default:
                 throw new AssertionError(expressionNode.getExpressionKind().name());
-        
+
         }
-        
-        
+
     }
 
     private static void addOperator(Node expressionNode, CompilerContext ctx) {
         CodeBlock block = ctx.currentBlock();
-        switch(expressionNode.getOperationAttribute()) {
+        if (ctx.shouldMarkLine(expressionNode.getLineNumber())) {
+            LabelNode instructionLabel = new LabelNode();
+            ctx.currentBlock().label(instructionLabel);
+            ctx.currentBlock().line(expressionNode.getLineNumber(), instructionLabel);
+            ctx.markLine(expressionNode.getLineNumber());
+        }
+        switch (expressionNode.getOperationAttribute()) {
             case MULTIPLICATION:
                 block.imul();
                 return;
@@ -144,29 +173,25 @@ public class TinyCompiler {
                         .go_to(afterEqual)
                         .label(isNotEqual)
                         .iconst_0()
-                        .label(afterEqual);    
+                        .label(afterEqual);
                 return;
             }
             default:
-                throw new RuntimeException("Wrong operation:"+expressionNode.getOperationAttribute());
+                throw new RuntimeException("Wrong operation:" + expressionNode.getOperationAttribute());
         }
-        
+
     }
 
     public static CompilerContext compileProgram(Node parseTree, CompilerContext compilerContext, SymbolTable symbols) {
 
         compileStatement(parseTree, compilerContext, symbols); //Compile expression
-        compilerContext.currentBlock().aconst_null();
-        compilerContext.currentBlock().areturn(); // return value of expression
+        compilerContext.currentBlock().label(compilerContext.endLabel);
+        compilerContext.currentBlock().voidreturn(); // return value of expression
 
-        compilerContext.blockToMethod("main");
+        compilerContext.blockToMain();
 
         return compilerContext;
-        
-        
+
     }
 
-    
-    
-    
 }
